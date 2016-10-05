@@ -1,0 +1,253 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <script src="https://code.jquery.com/jquery-1.12.3.js">
+  </script>
+  <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
+  </script>
+<head>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+<title>
+</title>
+</head>
+<body>
+<script>
+
+$(document).ready(function() {
+    $('#squeue').DataTable({
+          "stateSave" : true,
+          "ajax": {
+                "dataSrc" : "squeue",
+                "url": "/data/squeue"
+              }, 
+          "columnDefs" : [ 
+             { "targets" : [ 1, 2, 3, 5, 6, 8, 10, 13, 14, 15, 16, 17,
+    18, 21, 22, 23, 24, 30, 31, 32, 33, 34, 35, 36, 40, 42, 43, 46,
+    48, 49, 50, 51],
+               "visible" : false,
+               "searchable" : false
+             },
+         ]
+    } );
+} );
+</script>
+<table id="squeue" class="display" cellspacing="0" width="100%">
+  <thead>
+    <tr>
+    <th>ACCOUNT0
+    </th>
+    <th>GRES1
+    </th>
+    <th>MIN_CPUS2
+    </th>
+    <th>MIN_TMP_DISK3
+    </th>
+    <th>END_TIME4
+    </th>
+    <th>FEATURES5
+    </th>
+    <th>GROUP6
+    </th>
+    <th>SHARED7
+    </th>
+    <th>JOBID8
+    </th>
+    <th>NAME9
+    </th>
+    <th>COMMENT10
+    </th>
+    <th>TIME_LIMIT11
+    </th>
+    <th>MIN_MEMORY12
+    </th>
+    <th>REQ_NODES13
+    </th>
+    <th>COMMAND14
+    </th>
+    <th>PRIORITY15
+    </th>
+    <th>QOS16
+    </th>
+    <th>REASON17
+    </th>
+    <th>&nbsp;18
+    </th>
+    <th>ST19
+    </th>
+    <th>USER20
+    </th>
+    <th>RESERVATION21
+    </th>
+    <th>WCKEY22
+    </th>
+    <th>EXC_NODES23
+    </th>
+    <th>NICE24
+    </th>
+    <th>S:C:T25
+    </th>
+    <th>JOBID26
+    </th>
+    <th>EXEC_HOST27
+    </th>
+    <th>CPUS28
+    </th>
+    <th>NODES29
+    </th>
+    <th>DEPENDENCY30
+    </th>
+    <th>ARRAY_JOB_ID31
+    </th>
+    <th>GROUP32
+    </th>
+    <th>SOCKETS_PER_NODE33
+    </th>
+    <th>CORES_PER_SOCKET34
+    </th>
+    <th>THREADS_PER_CORE35
+    </th>
+    <th>ARRAY_TASK_ID36
+    </th>
+    <th>TIME_LEFT37
+    </th>
+    <th>TIME38
+    </th>
+    <th>NODELIST39
+    </th>
+    <th>CONTIGUOUS40
+    </th>
+    <th>PARTITION41
+    </th>
+    <th>PRIORITY42
+    </th>
+    <th>NODELIST(REASON)43
+    </th>
+    <th>START_TIME44
+    </th>
+    <th>STATE45
+    </th>
+    <th>USER46
+    </th>
+    <th>SUBMIT_TIME47
+    </th>
+    <th>LICENSES48
+    </th>
+    <th>CORE_SPEC49
+    </th>
+    <th>SCHEDNODES50
+    </th>
+    <th>WORK_DIR51
+    </th>
+  </tr>
+</thead>
+  <tfoot>
+    <tr>
+    <th>ACCOUNT0
+    </th>
+    <th>GRES1
+    </th>
+    <th>MIN_CPUS2
+    </th>
+    <th>MIN_TMP_DISK3
+    </th>
+    <th>END_TIME4
+    </th>
+    <th>FEATURES5
+    </th>
+    <th>GROUP6
+    </th>
+    <th>SHARED7
+    </th>
+    <th>JOBID8
+    </th>
+    <th>NAME9
+    </th>
+    <th>COMMENT10
+    </th>
+    <th>TIME_LIMIT11
+    </th>
+    <th>MIN_MEMORY12
+    </th>
+    <th>REQ_NODES13
+    </th>
+    <th>COMMAND14
+    </th>
+    <th>PRIORITY15
+    </th>
+    <th>QOS16
+    </th>
+    <th>REASON17
+    </th>
+    <th>&nbsp;18
+    </th>
+    <th>ST19
+    </th>
+    <th>USER20
+    </th>
+    <th>RESERVATION21
+    </th>
+    <th>WCKEY22
+    </th>
+    <th>EXC_NODES23
+    </th>
+    <th>NICE24
+    </th>
+    <th>S:C:T25
+    </th>
+    <th>JOBID26
+    </th>
+    <th>EXEC_HOST27
+    </th>
+    <th>CPUS28
+    </th>
+    <th>NODES29
+    </th>
+    <th>DEPENDENCY30
+    </th>
+    <th>ARRAY_JOB_ID31
+    </th>
+    <th>GROUP32
+    </th>
+    <th>SOCKETS_PER_NODE33
+    </th>
+    <th>CORES_PER_SOCKET34
+    </th>
+    <th>THREADS_PER_CORE35
+    </th>
+    <th>ARRAY_TASK_ID36
+    </th>
+    <th>TIME_LEFT37
+    </th>
+    <th>TIME38
+    </th>
+    <th>NODELIST39
+    </th>
+    <th>CONTIGUOUS40
+    </th>
+    <th>PARTITION41
+    </th>
+    <th>PRIORITY42
+    </th>
+    <th>NODELIST(REASON)43
+    </th>
+    <th>START_TIME44
+    </th>
+    <th>STATE45
+    </th>
+    <th>USER46
+    </th>
+    <th>SUBMIT_TIME47
+    </th>
+    <th>LICENSES48
+    </th>
+    <th>CORE_SPEC49
+    </th>
+    <th>SCHEDNODES50
+    </th>
+    <th>WORK_DIR51
+    </th>
+  </tr>
+</tfoot>
+</table>
+
+</body>
+</html>
