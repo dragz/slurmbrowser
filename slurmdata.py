@@ -1,14 +1,11 @@
 import os
 import csv
-import json
 import StringIO
 from bottle import route, run, static_file
 
 @route('/<filename>')
 def server_static(filename):
-    return static_file(filename, root='/home/royd/projects/slurmbrowser')
-
-
+    return static_file(filename, root='.')
 
 def convert(a):
     b = a.strip()
@@ -27,7 +24,7 @@ def get_squeue_data():
 
 @route('/data/squeue')
 def returnsqueue():
-    return {'squeue' : get_squeue_data()}
+    return {'jobs' : get_squeue_data()}
 
 
 run(host='localhost', port=8080, debug=True, reloader=True)
