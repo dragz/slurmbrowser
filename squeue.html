@@ -34,15 +34,18 @@ function renderTable(squeueData){
     var jobs = squeueData['jobs'].slice(1);
     var cols = [];
     for (c in visibleCols) {
-        cols[c] = { title: visibleCols[c], data: visibleIdx[c] };
+        cols[c] = { title: visibleCols[c], data: visibleIdx[c],
+                    className: "dt-body-right" };
     }
+    cols[cols.length-1].className = "dt-body-left";
 
     $('#squeue').DataTable({
           data : jobs,
           columns : cols,
           order : [[ 6, "asc"]], // default ordering is END_TIME
-          pageLength : 50, 
-          lengthMenu : [ [ 50, 100, -1], [ 50, 100, "All"] ],
+          pageLength : 25, 
+          lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
+          scrollX : true,
           stateSave : true
     } );
 }
@@ -51,7 +54,7 @@ function renderTable(squeueData){
 getDataAsync("data/squeue", renderTable);
 </script>
 
-<table id="squeue" class="display" cellspacing="0" width="100%"></table>
+<table id="squeue" class="display nowrap" cellspacing="0" width="100%"></table>
 
 <script>
 </script>
