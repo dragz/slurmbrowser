@@ -23,7 +23,7 @@ function getDataAsync(url, callback) {
 
 function renderTable(squeueData){
     var visibleCols = ["JOBID", "USER", "ST", "CPUS", "TIME_LEFT",
-    "START_TIME", "END_TIME"];
+    "TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
     
     var visibleIdx = [];
     for (c in visibleCols) {
@@ -34,7 +34,7 @@ function renderTable(squeueData){
     var jobs = squeueData['jobs'].slice(1);
     var cols = [];
     for (c in visibleCols) {
-        cols[c] = { title: visibleCols[c], data: visibleIdx[c] };   
+        cols[c] = { title: visibleCols[c], data: visibleIdx[c] };
     }
 
     $('#squeue').DataTable({
@@ -42,9 +42,10 @@ function renderTable(squeueData){
           columns : cols,
           order : [[ 6, "asc"]], // default ordering is END_TIME
           stateSave : true
-    } );
+    } );v
 }
 
+//Pull all queue info from the server as json and render the htmltable
 getDataAsync("data/squeue", renderTable);
 </script>
 
