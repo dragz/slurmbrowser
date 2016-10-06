@@ -41,8 +41,10 @@ function renderTable(squeueData){
           data : jobs,
           columns : cols,
           order : [[ 6, "asc"]], // default ordering is END_TIME
+          pageLength : 50, 
+          lengthMenu : [ [ 50, 100, -1], [ 50, 100, "All"] ],
           stateSave : true
-    } );v
+    } );
 }
 
 //Pull all queue info from the server as json and render the htmltable
