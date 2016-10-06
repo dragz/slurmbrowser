@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <script src="https://code.jquery.com/jquery-1.12.3.js">
+  </script>
+  <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
+  </script>
+<head>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+<title>
+</title>
+</head>
+<body>
+<script>
+// cutnpaste from stackexchange
+function getDataAsync(url, callback) {
+    $.ajax({
+        async: true,
+        url: url,
+        dataType: 'json',
+        success: callback
+    });
+}
+
+function renderTable(sinfoData){
+    var visibleCols = ["HOSTNAMES", "CPU_LOAD", "SOCKETS", "CORES",
+    "THREADS", "S:C:T", "CPUS(A/I/O/T)"];
+    
+    var headers = sinfoData['headers'];
+    var nodes = sinfoData['nodes'];
+
+    var visibleIdx = [];
+    for (c in visibleCols) {
+        visibleIdx.push(headers.indexOf(visibleCols[c]));
+     }
+    var cols = [];
+    for (c in visibleCols) {
+        cols[c] = { title: visibleCols[c], data: visibleIdx[c] };
+    }
+
+    $('#sinfo').DataTable({
+          data : nodes,
+          columns : cols,
+          order : [[ 1, "asc"]],
+          pageLength : 50, 
+          lengthMenu : [ [ 50, 100, -1], [ 50, 100, "All"] ],
+          stateSave : true
+    } );
+}
+
+//Pull all queue info from the server as json and render the htmltable
+getDataAsync("data/sinfo", renderTable);
+</script>
+
+<table id="sinfo" class="display" cellspacing="0" width="100%"></table>
+
+<script>
+</script>
+
+</body>
+</html>
