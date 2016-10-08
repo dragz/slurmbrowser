@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <script src="https://code.jquery.com/jquery-1.12.3.js">
+  </script>
+  <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
+  </script>
+<head>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+<title>
+</title>
+</head>
+<body>
+<p id="debug"></p>
+<table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
+
+<script>
+//cutnpaste from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript 
+var urlParams;
+(window.onpopstate = function () {
+    var match,
+        pl     = /\+/g,  // Regex for replacing addition symbol with aspace
+        search = /([^&=]+)=?([^&]*)/g,
+        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+        query  = window.location.search.substring(1);
+
+    urlParams = {};
+    while (match = search.exec(query))
+       urlParams[decode(match[1])] = decode(match[2]);
+})();
+
+function expandHostlist(hostlist) {
+   return hostlist.split(",");
+}
+
+var jobid = urlParams['jobid'];
+var start = (new Date(urlParams['start'])).getTime()/1000;
+var end   = (new Date(urlParams['end'])).getTime()/1000;
+var hostlist = expandHostlist(urlParams['hostlist']);
+
+document.getElementById('debug').innerHTML = "jobid = " + jobid +
+        " start = " + urlParams['start']  +
+        " end = " + urlParams['end'] + 
+        "<p>hostlist = " + hostlist + "</p>";
+
+base_graph_url = "<IMG SRC='http://stallo-adm.uit.no/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=now'>"
+
+var graphlist = ["load_report",
+                 "cpu_report",
+                 "mem_report",
+                 "network_report",
+                 "packet_report",
+                 "nfs_report",
+                 "infiniband_report",
+                 "infinibandpkt_report",
+                 "lustre_report"];
+
+var cols = [];
+for (g in graphlist) {
+    cols.push({ title : graphlist[g]});
+}
+var graphtable = [];
+for (h in hostlist) {
+    row = [];
+    for (g in graphlist) {
+       row.push(base_graph_url.replace("GRAPH_NAME", graphlist[g])
+                              .replace("HOSTNAME", hostlist[h])
+                              .replace("STARTTIME", start));
+    }
+    graphtable.push(row);
+}
+
+$('#jobgraphs').DataTable({
+      data : graphtable,
+      columns : cols,
+      stateSave : true
+} );
+
+
+</script>
+<script>
+</script>
+
+</body>
+</html>

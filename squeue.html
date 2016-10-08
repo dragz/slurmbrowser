@@ -21,17 +21,32 @@ function getDataAsync(url, callback) {
     });
 }
 
+function link_to_jobinfo(data, type, row) {
+   var start = row[starttime_idx];
+   var end = row[endtime_idx];
+   var hostlist = row[full_nodelist_idx];
+   return "<a href=jobinfo.html?jobid=" + data + 
+          "&start=" + start + 
+          "&end=" + end +
+          "&hostlist=" + hostlist +
+          ">" + data + "</a>";
+}
+
 function renderTable(squeueData){
     var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "CPUS", "MIN_MEMORY", "TIME_LEFT",
     "TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
-    
+
+    var headers = squeueData['headers'];
+    var jobs = squeueData['jobs'];
     var visibleIdx = [];
     for (c in visibleCols) {
-        visibleIdx.push(squeueData['jobs'][0].indexOf(visibleCols[c]));
-     }
+        visibleIdx.push(headers.indexOf(visibleCols[c]));
+    }
 
-    var headers = squeueData['jobs'][0]
-    var jobs = squeueData['jobs'].slice(1);
+    var full_nodelist_idx = headers.indexOf("FULL_NODELIST");
+    var starttime_idx = headers.indexOf("START_TIME");
+    var endtime_idx = headers.indexOf("END_TIME");
+
     var cols = [];
     for (c in visibleCols) {
         cols[c] = { title: visibleCols[c], data: visibleIdx[c],
@@ -46,14 +61,32 @@ function renderTable(squeueData){
           pageLength : 25, 
           lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
           scrollX : true,
-          stateSave : true
+          stateSave : true,
+	  columnDefs : [
+                  { render : function(data, type, row) {
+                                var start = row[starttime_idx];
+                                var end = row[endtime_idx];
+                                var hostlist = row[full_nodelist_idx];
+                                return "<a href=job.html?jobid=" + data + 
+                                       "&start=" + start + 
+                                       "&end=" + end +
+                                       "&hostlist=" + hostlist +
+                                       ">" + data + "</a>";
+                               
+                             },
+                    targets : 0
+                  }
+          ]
     } );
+//   document.getElementById('debug').innerHTML = ;
 }
 
 //Pull all queue info from the server as json and render the htmltable
 getDataAsync("data/squeue", renderTable);
 </script>
+<p id="debug"></p>
 
+<p> <a href="sinfo.html"> sinfo </a> </p>
 <table id="squeue" class="display nowrap" cellspacing="0" width="100%"></table>
 
 <script>
