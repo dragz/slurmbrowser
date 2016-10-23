@@ -33,8 +33,10 @@ function expandHostlist(hostlist) {
 }
 
 var jobid = urlParams['jobid'];
-var start = (new Date(urlParams['start'])).getTime()/1000;
-var end   = (new Date(urlParams['end'])).getTime()/1000;
+//URGH timezone issue!!! How do one get the clients TZ?
+//ganglias rrdtool seems to use UTC so we are off by two hours
+var start = (new Date(urlParams['start'])).getTime()/1000 - 7200;
+var end   = (new Date(urlParams['end'])).getTime()/1000 - 7200;
 var hostlist = expandHostlist(urlParams['hostlist']);
 
 document.getElementById('debug').innerHTML = "jobid = " + jobid +
