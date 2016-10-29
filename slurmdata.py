@@ -2,17 +2,18 @@ import os
 import sys
 import csv
 import StringIO
-from bottle import route, run, static_file
-import bottle
-from hostlist import expand_hostlist
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
   sys.path.append(os.path.dirname(__file__))
   os.chdir(os.path.dirname(__file__))
+from bottle import route, run, static_file
+import bottle
+from hostlist import expand_hostlist
 
 
-@route('/<filename>')
+
+@route('/html/<filename>')
 def server_static(filename):
     return static_file(filename, root='.')
 
