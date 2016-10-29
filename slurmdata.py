@@ -1,8 +1,16 @@
 import os
+import sys
 import csv
 import StringIO
 from bottle import route, run, static_file
+import bottle
 from hostlist import expand_hostlist
+
+# quick fix for locating install dir when running under apache
+if not __name__ == "__main__":
+  sys.path.append(os.path.dirname(__file__))
+  os.chdir(os.path.dirname(__file__))
+
 
 @route('/<filename>')
 def server_static(filename):
@@ -52,5 +60,9 @@ def get_sinfo_data():
 def returnsqueue():
     return get_sinfo_data()
 
+if __name__ == "__main__":
+    run(host='localhost', port=8080, debug=True, reloader=True)
+else:
+    application = bottle.default_app()
 
-run(host='localhost', port=8080, debug=True, reloader=True)
+
