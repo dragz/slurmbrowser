@@ -10,10 +10,26 @@
 </title>
 </head>
 <body>
+
+
+<p id="jobstats"></p>
 <p id="debug"></p>
+<table id="cpumapping" class="display nowrap" cellspacing="0" width="100%"></table>
 <table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
 
 <script>
+$(document).ready(function() {
+
+// cutnpaste from stackexchange
+function getDataAsync(url, callback) {
+    $.ajax({
+        async: true,
+        url: url,
+        dataType: 'json',
+        success: callback
+    });
+}
+
 //cutnpaste from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript 
 var urlParams;
 (window.onpopstate = function () {
@@ -39,12 +55,12 @@ var start = (new Date(urlParams['start'])).getTime()/1000 - 7200;
 var end   = (new Date(urlParams['end'])).getTime()/1000 - 7200;
 var hostlist = expandHostlist(urlParams['hostlist']);
 
-document.getElementById('debug').innerHTML = "jobid = " + jobid +
-        " start = " + urlParams['start']  +
-        " end = " + urlParams['end'] + 
-        "<p>hostlist = " + hostlist + "</p>";
+//document.getElementById('debug').innerHTML = "jobid = " + jobid +
+//        " start = " + urlParams['start']  +
+//        " end = " + urlParams['end'] + 
+//        "<p>hostlist = " + hostlist + "</p>";
 
-base_graph_url = "<IMG SRC='http://stallo-adm.uit.no/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=now'>"
+var base_graph_url = "<IMG SRC='http://stallo-adm.uit.no/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=now'>";
 
 var graphlist = ["load_report",
                  "cpu_report",
@@ -78,8 +94,56 @@ $('#jobgraphs').DataTable({
 } );
 
 
-</script>
-<script>
+function displayJobInfo(jobinfo) {
+    var jobInfoTable = [['JobId', 'JobName', 'UserId', 'Account', 'QOS', 
+                          'Partition', 'Shared' ],
+                        ['SubmitTime', 'StartTime', 'EndTime', 'TimeLimit', 'RunTime'],
+                        ['NumCPUs', 'NumNodes', 'MinMemoryCPU']];
+    var htmltable = "<table><tr>";
+    var i, j;
+    for (i in jobInfoTable) {
+        htmltable += "<td><table>";
+	for (j in jobInfoTable[i]) {
+	    var elem = jobInfoTable[i][j];
+	    htmltable += "<tr><td>" + elem + "=" + jobinfo[elem] + "</td></tr>"; 
+        }
+        htmltable += "</table></td>";
+    }
+    htmltable += "</tr></table>";
+    var nodelist = "<p>NodeList=" + jobinfo['NodeList'] + "</p>";
+    document.getElementById('jobstats').innerHTML = htmltable;
+
+    var cpumaptable = [];
+    for (i in jobinfo['cpu_mapping']['nodes']) {
+        cpumaptable[i] = jobinfo['cpu_mapping']['nodes'][i];
+    }
+    htmltable = "<table>";
+    htmltable += "<thead>";
+    for (i in jobinfo['cpu_mapping']['headers']) {
+        htmltable += "<th>" +  jobinfo['cpu_mapping']['headers'][i] + "</th>";
+    }
+    htmltable += "</thead>";
+    htmltable += "<tbody>";
+    for (i in cpumaptable) {
+        htmltable += "<tr>";
+        for (j in cpumaptable[i]) {
+            htmltable += "<td>" + cpumaptable[i][j] + "</td>";
+        }
+        htmltable += "</tr>";
+    }
+    htmltable += "</tbody>";
+    htmltable += "</table>";
+    document.getElementById('debug').innerHTML = htmltable;
+
+//    $('#cpumapping').DataTable({
+//         data : [[0,1,2,3],[4,5,6,7]],
+//         stateSave : true
+//      } );
+}
+
+getDataAsync("../data/job/" + jobid, displayJobInfo);
+});
+
 </script>
 
 </body>
