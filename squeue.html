@@ -33,7 +33,8 @@ function link_to_jobinfo(data, type, row) {
 }
 
 function renderTable(squeueData){
-    var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "CPUS", "MIN_MEMORY", "TIME_LEFT",
+    var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "PARTITION",
+    "QOS", "SHARED", "CPUS", "MIN_MEMORY", "TIME_LEFT",
     "TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
 
     var headers = squeueData['headers'];
@@ -57,7 +58,7 @@ function renderTable(squeueData){
     $('#squeue').DataTable({
           data : jobs,
           columns : cols,
-          order : [[ 6, "asc"]], // default ordering is END_TIME
+          order : [[ endtime_idx, "asc"]], // default ordering is END_TIME
           pageLength : 25, 
           lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
           scrollX : true,
@@ -82,7 +83,7 @@ function renderTable(squeueData){
 }
 
 //Pull all queue info from the server as json and render the htmltable
-getDataAsync("/slurmbrowser/data/squeue", renderTable);
+getDataAsync("../data/squeue", renderTable);
 </script>
 <p id="debug"></p>
 
