@@ -14,7 +14,14 @@
 
 <p id="jobstats"></p>
 <p id="debug"></p>
-<table id="cpumapping" class="display nowrap" cellspacing="0" width="100%"></table>
+<table id="cpumapping" class="display" cellspacing="0"
+       width="20%">
+  <thead> 
+    <th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
 <table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
 
 <script>
@@ -113,32 +120,17 @@ function displayJobInfo(jobinfo) {
     var nodelist = "<p>NodeList=" + jobinfo['NodeList'] + "</p>";
     document.getElementById('jobstats').innerHTML = htmltable;
 
-    var cpumaptable = [];
-    for (i in jobinfo['cpu_mapping']['nodes']) {
-        cpumaptable[i] = jobinfo['cpu_mapping']['nodes'][i];
-    }
-    htmltable = "<table>";
-    htmltable += "<thead>";
-    for (i in jobinfo['cpu_mapping']['headers']) {
-        htmltable += "<th>" +  jobinfo['cpu_mapping']['headers'][i] + "</th>";
-    }
-    htmltable += "</thead>";
-    htmltable += "<tbody>";
-    for (i in cpumaptable) {
-        htmltable += "<tr>";
-        for (j in cpumaptable[i]) {
-            htmltable += "<td>" + cpumaptable[i][j] + "</td>";
-        }
-        htmltable += "</tr>";
-    }
-    htmltable += "</tbody>";
-    htmltable += "</table>";
-    document.getElementById('debug').innerHTML = htmltable;
-
-//    $('#cpumapping').DataTable({
-//         data : [[0,1,2,3],[4,5,6,7]],
-//         stateSave : true
-//      } );
+    $('#cpumapping').DataTable({
+         data : jobinfo['cpu_mapping']['nodes'],
+         stateSave : true,
+         columnDefs : [
+           { render : function(data, type, row) {
+                    return data.toString().replace(/,c/g, " c");
+                    },
+             targets : 0
+           }
+         ]
+      } );
 }
 
 getDataAsync("../data/job/" + jobid, displayJobInfo);
