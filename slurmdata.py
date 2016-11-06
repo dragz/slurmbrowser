@@ -61,6 +61,21 @@ def get_sinfo_data():
 def returnsqueue():
     return get_sinfo_data()
 
+@route('/data/job/<jobid:int>')
+def returnjobinfo(jobid):
+    s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
+    j = dict(x.split('=', 1) for x in s)
+    cpu_mapping = list()
+    h = ['Nodes', 'CPU_IDs', 'Mem']
+    for i, n in enumerate(s):
+        if n.startswith("Nodes="):
+          cpu_mapping.append([s[i].replace('Nodes=',''),
+                             s[i+1].replace('CPU_IDs=',''),
+                             s[i+2].replace('Mem=','')])
+    print cpu_mapping
+    j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
+    return j
+
 if __name__ == "__main__":
     run(host='localhost', port=8080, debug=True, reloader=True)
 else:
