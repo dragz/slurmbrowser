@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import StringIO
+import datetime as dt
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
@@ -61,20 +62,37 @@ def get_sinfo_data():
 def returnsqueue():
     return get_sinfo_data()
 
-@route('/data/job/<jobid:int>')
+@route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
 def returnjobinfo(jobid):
+    print jobid
     s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
     j = dict(x.split('=', 1) for x in s)
     cpu_mapping = list()
     h = ['Nodes', 'CPU_IDs', 'Mem']
+    nodelist = ""
     for i, n in enumerate(s):
         if n.startswith("Nodes="):
           cpu_mapping.append([s[i].replace('Nodes=',''),
                              s[i+1].replace('CPU_IDs=',''),
                              s[i+2].replace('Mem=','')])
-    print cpu_mapping
+        if n.startswith("NodeList="):
+          nodelist = n.replace("NodeList=", "")
     j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
+    j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
     return j
+
+@route('/data/jobhist/<user>')
+def returnjobhist(user):
+    yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
+    s = os.popen("sacct -s cd -S %s -X --format=jobid,jobname,user,account,elapsed,start,end,nnodes,ncpus,nodelist -p -u %s" % (yesterday, user), 'r').read()
+    t = StringIO.StringIO(s)
+    reader = csv.reader(t, delimiter='|')
+    headers = map(convert, reader.next())
+    jobs = list()
+    for row in reader:
+        jobs.append(map(convert, row))
+    return dict(headers=headers, jobs=jobs)
+
 
 if __name__ == "__main__":
     run(host='localhost', port=8080, debug=True, reloader=True)

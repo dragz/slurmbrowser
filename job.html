@@ -6,16 +6,24 @@
   </script>
 <head>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+<style>
+#rightalign td {
+    text-align : right;
+}
+#leftalign td {
+    text-align : left;
+}
+</style>
+
 <title>
 </title>
 </head>
 <body>
 
-
-<p id="jobstats"></p>
+<table id="jobstats" class="display" cellspacing="10">
 <p id="debug"></p>
-<table id="cpumapping" class="display" cellspacing="0"
-       width="20%">
+<table id="cpumapping" class="display" cellspacing="0" 
+       width="20%" align="left">
   <thead> 
     <th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
   </thead>
@@ -56,20 +64,17 @@ function expandHostlist(hostlist) {
 }
 
 var jobid = urlParams['jobid'];
-//URGH timezone issue!!! How do one get the clients TZ?
-//ganglias rrdtool seems to use UTC so we are off by two hours
-var start = (new Date(urlParams['start'])).getTime()/1000 - 7200;
-var end   = (new Date(urlParams['end'])).getTime()/1000 - 7200;
-var hostlist = expandHostlist(urlParams['hostlist']);
 
-//document.getElementById('debug').innerHTML = "jobid = " + jobid +
-//        " start = " + urlParams['start']  +
-//        " end = " + urlParams['end'] + 
-//        "<p>hostlist = " + hostlist + "</p>";
+function displayGraphs(jobinfo)
+{
+   //URGH timezone issue!!! How do one get the clients TZ?
+   //ganglias rrdtool seems to use UTC so we are off by two hours
+   var start = (new Date(jobinfo['StartTime'])).getTime()/1000 - 3600 ;
+   var end   = (new Date(jobinfo['EndTime'])).getTime()/1000 - 3600 ;
+   var hostlist = jobinfo['expanded_nodelist'];
+   var base_graph_url = "<IMG SRC='http://stallo-adm.uit.no/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=now'>";
 
-var base_graph_url = "<IMG SRC='http://stallo-adm.uit.no/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=now'>";
-
-var graphlist = ["load_report",
+   var graphlist = ["load_report",
                  "cpu_report",
                  "mem_report",
                  "network_report",
@@ -79,40 +84,44 @@ var graphlist = ["load_report",
                  "infinibandpkt_report",
                  "lustre_report"];
 
-var cols = [];
-for (g in graphlist) {
-    cols.push({ title : graphlist[g]});
+   var cols = [];
+   for (g in graphlist) {
+       cols.push({ title : graphlist[g]});
+   }
+   var graphtable = [];
+   for (h in hostlist) {
+       row = [];
+       for (g in graphlist) {
+          row.push(base_graph_url.replace("GRAPH_NAME", graphlist[g])
+                                 .replace("HOSTNAME", hostlist[h])
+                                 .replace("STARTTIME", start));
+       }
+       graphtable.push(row);
+   }
+   
+   $('#jobgraphs').DataTable({
+         data : graphtable,
+         columns : cols,
+         stateSave : true,
+         paging : false,
+         info : false,
+         searching : false         
+   } );
 }
-var graphtable = [];
-for (h in hostlist) {
-    row = [];
-    for (g in graphlist) {
-       row.push(base_graph_url.replace("GRAPH_NAME", graphlist[g])
-                              .replace("HOSTNAME", hostlist[h])
-                              .replace("STARTTIME", start));
-    }
-    graphtable.push(row);
-}
-
-$('#jobgraphs').DataTable({
-      data : graphtable,
-      columns : cols,
-      stateSave : true
-} );
-
 
 function displayJobInfo(jobinfo) {
     var jobInfoTable = [['JobId', 'JobName', 'UserId', 'Account', 'QOS', 
                           'Partition', 'Shared' ],
                         ['SubmitTime', 'StartTime', 'EndTime', 'TimeLimit', 'RunTime'],
                         ['NumCPUs', 'NumNodes', 'MinMemoryCPU']];
-    var htmltable = "<table><tr>";
+    var htmltable = "<table><tr valign='top'>";
     var i, j;
     for (i in jobInfoTable) {
-        htmltable += "<td><table>";
+        htmltable += "<td><table  id='jobinformation'>";
 	for (j in jobInfoTable[i]) {
 	    var elem = jobInfoTable[i][j];
-	    htmltable += "<tr><td>" + elem + "=" + jobinfo[elem] + "</td></tr>"; 
+	    htmltable += "<tr><td id='rightalign'>" + elem +
+    "</td><td>=</td><td id='leftalign'>" + jobinfo[elem] + "</td></tr>"; 
         }
         htmltable += "</table></td>";
     }
@@ -123,6 +132,10 @@ function displayJobInfo(jobinfo) {
     $('#cpumapping').DataTable({
          data : jobinfo['cpu_mapping']['nodes'],
          stateSave : true,
+         searching : false,
+         paging : false,
+         ordering : false,
+         info : false,
          columnDefs : [
            { render : function(data, type, row) {
                     return data.toString().replace(/,c/g, " c");
@@ -133,7 +146,13 @@ function displayJobInfo(jobinfo) {
       } );
 }
 
-getDataAsync("../data/job/" + jobid, displayJobInfo);
+function renderPage(jobinfo)
+{
+   displayJobInfo(jobinfo);
+   displayGraphs(jobinfo);
+}
+
+getDataAsync("../data/job/" + jobid, renderPage);
 });
 
 </script>
