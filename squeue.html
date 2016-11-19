@@ -4,12 +4,25 @@
   </script>
   <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
   </script>
+  <script src="mousetrap.min.js">
+  </script>
 <head>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
 <title>
 </title>
 </head>
 <body>
+
+<p id="debug"></p>
+
+<p> <a href="sinfo.html"> sinfo </a> </p>
+<table id="squeue" class="display nowrap" cellspacing="0" width="100%"></table>
+<p>
+Credits:<br>
+Developed by roy.dragseth@uit.no using Bottle for the server side and
+Datatables and Mousetrap for the client side.
+</p>
+
 <script>
 // cutnpaste from stackexchange
 function getDataAsync(url, callback) {
@@ -55,7 +68,7 @@ function renderTable(squeueData){
     }
     cols[cols.length-1].className = "dt-body-left";
 
-    $('#squeue').DataTable({
+    var squeue = $('#squeue').DataTable({
           data : jobs,
           columns : cols,
           order : [[ endtime_idx, "asc"]], // default ordering is END_TIME
@@ -77,15 +90,28 @@ function renderTable(squeueData){
           ]
     } );
 //   document.getElementById('debug').innerHTML = ;
+
+   Mousetrap.bind('n', function() {
+      squeue.page( 'next' ).draw( 'page' );
+    });
+   Mousetrap.bind('p', function() {
+      squeue.page( 'previous' ).draw( 'page' );
+    });
+   Mousetrap.bind('f', function() {
+      squeue.page( 'first' ).draw( 'page' );
+    });
+   Mousetrap.bind('l', function() {
+      squeue.page( 'last' ).draw( 'page' );
+    });
+   Mousetrap.bind('s', function() {
+      $('div.dataTables_filter input').focus();
+    }, 'keyup');
+
 }
 
 //Pull all queue info from the server as json and render the htmltable
 getDataAsync("../data/squeue", renderTable);
 </script>
-<p id="debug"></p>
-
-<p> <a href="sinfo.html"> sinfo </a> </p>
-<table id="squeue" class="display nowrap" cellspacing="0" width="100%"></table>
 
 <script>
 </script>
