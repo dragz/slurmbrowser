@@ -59,7 +59,7 @@ def get_sinfo_data():
     return {'headers' : headers, 'nodes' : rows }
 
 @route('/data/sinfo')
-def returnsqueue():
+def returnsinfo():
     return get_sinfo_data()
 
 @route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
