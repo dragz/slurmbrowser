@@ -10,6 +10,10 @@
 </title>
 </head>
 <body>
+<p> <a href="squeue.html"> squeue </a> </p>
+
+<table id="nodeinfo" class="display" cellspacing="0" width="100%"></table>
+
 <script>
 // cutnpaste from stackexchange
 function getDataAsync(url, callback) {
@@ -49,12 +53,6 @@ function renderTable(nodeinfoData){
 
 //Pull all queue info from the server as json and render the htmltable
 getDataAsync("../data/nodeinfo", renderTable);
-</script>
-<p> <a href="squeue.html"> squeue </a> </p>
-
-<table id="nodeinfo" class="display" cellspacing="0" width="100%"></table>
-
-<script>
 </script>
 
 </body>
