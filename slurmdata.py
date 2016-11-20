@@ -3,13 +3,13 @@ import sys
 import csv
 import StringIO
 import datetime as dt
+from urllib2 import urlopen
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
   sys.path.append(os.path.dirname(__file__))
   os.chdir(os.path.dirname(__file__))
-from bottle import route, run, static_file
-import bottle
+from bottle import route, run, static_file, request, response, default_app
 from hostlist import expand_hostlist
 
 
@@ -106,10 +106,28 @@ def returnjobhist(user):
         jobs.append(map(convert, row))
     return dict(headers=headers, jobs=jobs)
 
+#
+# Proxy requests for graphs to backend so we do not have to expose it
+#
+@route('/graph/')
+def fetchgraph():
+    # graphurlbase should rather be configurable than hardwired. 
+    graphurlbase = 'http://stallo-adm.local/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=ENDTIME'
+    try:
+      graphurl = (graphurlbase.replace('GRAPH_NAME', request.query.name)
+                              .replace('HOSTNAME',   request.query.hostname)
+                              .replace('STARTTIME',  request.query.start)
+                              .replace('ENDTIME',    request.query.end)
+                  )
+      graph = urlopen(graphurl)
+      response.set_header('Content-type', 'image/png')
+    except Exception as e:
+      graph = None
+    return graph
 
 if __name__ == "__main__":
     run(host='localhost', port=8080, debug=True, reloader=True)
 else:
-    application = bottle.default_app()
+    application = default_app()
 
 

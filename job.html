@@ -72,7 +72,7 @@ function displayGraphs(jobinfo)
    var start = (new Date(jobinfo['StartTime'])).getTime()/1000 - 3600 ;
    var end   = (new Date(jobinfo['EndTime'])).getTime()/1000 - 3600 ;
    var hostlist = jobinfo['expanded_nodelist'];
-   var base_graph_url = "<IMG SRC='http://stallo-adm.uit.no/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=now'>";
+   var base_graph_url = "<IMG SRC='../graph/?name=GRAPH_NAME&hostname=HOSTNAME&start=STARTTIME&end=ENDTIME'>";
 
    var graphlist = ["load_report",
                  "cpu_report",
@@ -94,7 +94,9 @@ function displayGraphs(jobinfo)
        for (g in graphlist) {
           row.push(base_graph_url.replace("GRAPH_NAME", graphlist[g])
                                  .replace("HOSTNAME", hostlist[h])
-                                 .replace("STARTTIME", start));
+                                 .replace("STARTTIME", start)
+                                 .replace("ENDTIME", "now")
+          );
        }
        graphtable.push(row);
    }
