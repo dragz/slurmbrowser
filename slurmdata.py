@@ -62,6 +62,19 @@ def get_sinfo_data():
 def returnsinfo():
     return get_sinfo_data()
 
+@route('/data/nodeinfo')
+def returnnodeinfo():
+    s = StringIO.StringIO(os.popen("scontrol show -d --oneliner node", 'r').read())
+    r = csv.reader(s, delimiter=" ")
+    firstrow = r.next()
+    del firstrow[-1]
+    headers = [ convert(c.split('=', 1)[0]) for c in firstrow]
+    nodeinfo = [[ convert(c.split('=', 1)[1]) for c in firstrow]]
+    for row in r:
+      nl = [ convert(c.split('=', 1)[1]) for c in row[:-2]]
+      nodeinfo.append(nl)
+    return dict(headers=headers, nodeinfo=nodeinfo)
+
 @route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
 def returnjobinfo(jobid):
     print jobid
