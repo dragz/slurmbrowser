@@ -19,7 +19,7 @@
 </title>
 </head>
 <body>
-
+<p> <a href="squeue.html"> squeue </a> </p>
 <table id="jobstats" class="display" cellspacing="10">
 <p id="debug"></p>
 <table id="cpumapping" class="display" cellspacing="0" 
@@ -65,12 +65,32 @@ function expandHostlist(hostlist) {
 
 var jobid = urlParams['jobid'];
 
+function remap_jobinfo(jobinfo)
+{
+  //A quick hack to map the format coming from sacct to
+  //the one coming from scontrol
+  if (jobinfo["JobID"]) {
+    jobinfo["JobId"] = jobinfo["JobID"];
+    jobinfo["StartTime"] = jobinfo["Start"];
+    jobinfo["EndTime"] = jobinfo["End"];
+    jobinfo["UserId"] = jobinfo["User"];
+    jobinfo["RunTime"] = jobinfo["Elapsed"];
+    jobinfo["NumNodes"] = jobinfo["NNodes"];
+    jobinfo["NumCPUs"] = jobinfo["NCPUS"];
+  }
+  return jobinfo;
+}
+
 function displayGraphs(jobinfo)
 {
    //URGH timezone issue!!! How do one get the clients TZ?
    //ganglias rrdtool seems to use UTC so we are off by two hours
    var start = (new Date(jobinfo['StartTime'])).getTime()/1000 - 3600 ;
    var end   = (new Date(jobinfo['EndTime'])).getTime()/1000 - 3600 ;
+   var now   = (new Date()).getTime()/1000 - 3600 ;
+   if (end > now) {
+      end = "now";
+   }
    var hostlist = jobinfo['expanded_nodelist'];
    var base_graph_url = "<IMG SRC='../graph/?name=GRAPH_NAME&hostname=HOSTNAME&start=STARTTIME&end=ENDTIME'>";
 
@@ -95,7 +115,7 @@ function displayGraphs(jobinfo)
           row.push(base_graph_url.replace("GRAPH_NAME", graphlist[g])
                                  .replace("HOSTNAME", hostlist[h])
                                  .replace("STARTTIME", start)
-                                 .replace("ENDTIME", "now")
+                                 .replace("ENDTIME", end)
           );
        }
        graphtable.push(row);
@@ -131,25 +151,31 @@ function displayJobInfo(jobinfo) {
     var nodelist = "<p>NodeList=" + jobinfo['NodeList'] + "</p>";
     document.getElementById('jobstats').innerHTML = htmltable;
 
-    $('#cpumapping').DataTable({
-         data : jobinfo['cpu_mapping']['nodes'],
-         stateSave : true,
-         searching : false,
-         paging : false,
-         ordering : false,
-         info : false,
-         columnDefs : [
-           { render : function(data, type, row) {
-                    return data.toString().replace(/,c/g, " c");
-                    },
-             targets : 0
-           }
-         ]
-      } );
+    if (! jobinfo['JobID']) {
+      $('#cpumapping').DataTable({
+           data : jobinfo['cpu_mapping']['nodes'],
+           stateSave : true,
+           searching : false,
+           paging : false,
+           ordering : false,
+           info : false,
+           columnDefs : [
+             { render : function(data, type, row) {
+                      return data.toString().replace(/,c/g, " c");
+                      },
+               targets : 0
+             } 
+           ]
+        } );
+      }
+    else {
+      document.getElementById('cpumapping').innerHTML = nodelist;
+    }
 }
 
 function renderPage(jobinfo)
 {
+   jobinfo = remap_jobinfo(jobinfo);
    displayJobInfo(jobinfo);
    displayGraphs(jobinfo);
 }

@@ -15,15 +15,9 @@
 
 <p id="debug"></p>
 
-<p> <a href="nodeinfo.html"> nodeinfo </a> </p>
-<p>
-Keyboard shortcuts: f-first page, n-next, p-previous,
-l-last,s-search.<br>
-Click on jobid to display loadgrahps for job. Click on username to see
-the users job history since yesterday midnight.
-</p>
-
-<table id="squeue" class="display nowrap" cellspacing="0" width="100%"></table>
+<p> <a href="squeue.html"> squeue </a> </p>
+<p>Keyboard shortcuts: f-first page, n-next, p-previous, l-last, s-search.</p>
+<table id="jobhist" class="display nowrap" cellspacing="0" width="100%"></table>
 <p>
 Credits:<br>
 Developed by <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a>
@@ -34,6 +28,8 @@ client side.
 </p>
 
 <script>
+$(document).ready(function() {
+
 // cutnpaste from stackexchange
 function getDataAsync(url, callback) {
     $.ajax({
@@ -44,32 +40,31 @@ function getDataAsync(url, callback) {
     });
 }
 
-function link_to_jobinfo(data, type, row) {
-   var start = row[starttime_idx];
-   var end = row[endtime_idx];
-   var hostlist = row[full_nodelist_idx];
-   return "<a href=jobinfo.html?jobid=" + data + 
-          "&start=" + start + 
-          "&end=" + end +
-          "&hostlist=" + hostlist +
-          ">" + data + "</a>";
-}
 
-function renderTable(squeueData){
-    var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "PARTITION",
-    "QOS", "SHARED", "CPUS", "MIN_MEMORY", "TIME_LEFT",
-    "TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
+//cutnpaste from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript 
+var urlParams;
+(window.onpopstate = function () {
+    var match,
+        pl     = /\+/g,  // Regex for replacing addition symbol with aspace
+        search = /([^&=]+)=?([^&]*)/g,
+        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+        query  = window.location.search.substring(1);
 
-    var headers = squeueData['headers'];
-    var jobs = squeueData['jobs'];
+    urlParams = {};
+    while (match = search.exec(query))
+       urlParams[decode(match[1])] = decode(match[2]);
+})();
+
+
+function renderTable(jobhistData){
+    var user = urlParams['user'];
+    var visibleCols = jobhistData['headers']
+    var headers = jobhistData['headers'];
+    var jobs = jobhistData['jobs'];
     var visibleIdx = [];
     for (c in visibleCols) {
         visibleIdx.push(headers.indexOf(visibleCols[c]));
     }
-
-    var full_nodelist_idx = headers.indexOf("FULL_NODELIST");
-    var starttime_idx = headers.indexOf("START_TIME");
-    var endtime_idx = headers.indexOf("END_TIME");
 
     var cols = [];
     for (c in visibleCols) {
@@ -78,44 +73,37 @@ function renderTable(squeueData){
     }
     cols[cols.length-1].className = "dt-body-left";
 
-    var squeue = $('#squeue').DataTable({
+    var jobhist = $('#jobhist').DataTable({
           data : jobs,
           columns : cols,
-          order : [[ endtime_idx, "asc"]], // default ordering is END_TIME
+          order : [[ 0, "asc"]],
           pageLength : 25, 
           lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
           scrollX : true,
           stateSave : true,
 	  columnDefs : [
                   { render : function(data, type, row) {
-                                return "<a href=job.html?jobid=" + data + 
+                                 return "<a href=job.html?jobid=" + data + 
                                        ">" + data + "</a>";
                                
                              },
                     targets : 0
-                  },
-                  { render : function(data, type, row) {
-                                return "<a href=jobhist.html?user=" + data + 
-                                       ">" + data + "</a>";
-                               
-                             },
-                    targets : 1
                   }
           ]
     } );
 //   document.getElementById('debug').innerHTML = ;
 
    Mousetrap.bind('n', function() {
-      squeue.page( 'next' ).draw( 'page' );
+      jobhist.page( 'next' ).draw( 'page' );
     });
    Mousetrap.bind('p', function() {
-      squeue.page( 'previous' ).draw( 'page' );
+      jobhist.page( 'previous' ).draw( 'page' );
     });
    Mousetrap.bind('f', function() {
-      squeue.page( 'first' ).draw( 'page' );
+      jobhist.page( 'first' ).draw( 'page' );
     });
    Mousetrap.bind('l', function() {
-      squeue.page( 'last' ).draw( 'page' );
+      jobhist.page( 'last' ).draw( 'page' );
     });
    Mousetrap.bind('s', function() {
       $('div.dataTables_filter input').focus();
@@ -124,7 +112,9 @@ function renderTable(squeueData){
 }
 
 //Pull all queue info from the server as json and render the htmltable
-getDataAsync("../data/squeue", renderTable);
+getDataAsync("../data/jobhist/"+urlParams['user'], renderTable);
+
+});
 </script>
 
 <script>

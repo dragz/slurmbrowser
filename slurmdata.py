@@ -4,6 +4,7 @@ import csv
 import StringIO
 import datetime as dt
 from urllib2 import urlopen
+from pipes import quote
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
@@ -79,25 +80,41 @@ def returnnodeinfo():
 def returnjobinfo(jobid):
     print jobid
     s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
-    j = dict(x.split('=', 1) for x in s)
-    cpu_mapping = list()
-    h = ['Nodes', 'CPU_IDs', 'Mem']
-    nodelist = ""
-    for i, n in enumerate(s):
+    if s:
+      j = dict(x.split('=', 1) for x in s)
+      cpu_mapping = list()
+      h = ['Nodes', 'CPU_IDs', 'Mem']
+      nodelist = ""
+      for i, n in enumerate(s):
         if n.startswith("Nodes="):
           cpu_mapping.append([s[i].replace('Nodes=',''),
                              s[i+1].replace('CPU_IDs=',''),
                              s[i+2].replace('Mem=','')])
         if n.startswith("NodeList="):
           nodelist = n.replace("NodeList=", "")
-    j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
-    j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
+      j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
+      j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
+    else:
+      #not an active job, fetch finished job stats
+      #remark, these stats have a different format, leave it up to the client side
+      #to fix it.
+      yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
+      sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,nodelist --parsable2 -S %s --job %s"
+      s = os.popen(sacct % (yesterday, jobid), 'r').read()
+      t = StringIO.StringIO(s)
+      reader = csv.reader(t, delimiter='|')
+      headers = map(convert, reader.next())
+      jobinfo = map(convert, reader.next())
+      j = dict(zip(headers, jobinfo))
+      j['expanded_nodelist'] = map(str.strip, expand_hostlist(j["NodeList"]))
+      print j
     return j
 
 @route('/data/jobhist/<user>')
 def returnjobhist(user):
     yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
-    s = os.popen("sacct -s cd -S %s -X --format=jobid,jobname,user,account,elapsed,start,end,nnodes,ncpus,nodelist -p -u %s" % (yesterday, user), 'r').read()
+    sacct = "sacct -S %s -X --format=jobid,jobname,user,account,state,elapsed,start,end,nnodes,ncpus,nodelist --parsable2 -u %s" % (yesterday, quote(user))
+    s = os.popen(sacct, 'r').read()
     t = StringIO.StringIO(s)
     reader = csv.reader(t, delimiter='|')
     headers = map(convert, reader.next())
