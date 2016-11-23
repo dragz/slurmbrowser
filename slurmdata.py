@@ -131,14 +131,25 @@ def fetchgraph():
     # graphurlbase should rather be configurable than hardwired. 
     graphurlbase = 'http://stallo-adm.local/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=ENDTIME'
     try:
+      # quick fix for hostname renaming until steinar gets the c100 nodes installed with new slurm-acceptable hostname.
+      # c[fb]100-[1-9] is already OK.
+      fixedhosts = [ "cf100-%s"%i for i in range(1,10)] + [ "cb100-%s"%i for i in range(1,10)]
+      hostname = request.query.hostname
+      if not hostname in fixedhosts:
+        if "100-" in hostname:
+          # transform c[fb]100-X to c100-X[fb]
+          fb = hostname[1]
+          hostname = hostname.replace(fb, "") + fb
       graphurl = (graphurlbase.replace('GRAPH_NAME', request.query.name)
-                              .replace('HOSTNAME',   request.query.hostname)
+                              .replace('HOSTNAME',   hostname)
                               .replace('STARTTIME',  request.query.start)
                               .replace('ENDTIME',    request.query.end)
                   )
+      
       graph = urlopen(graphurl)
       response.set_header('Content-type', 'image/png')
     except Exception as e:
+      print e
       graph = None
     return graph
 
