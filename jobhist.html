@@ -15,7 +15,8 @@
 
 <p id="debug"></p>
 <p> <a href="squeue.html"> squeue </a> </p>
-<p>Keyboard shortcuts: f-first page, n-next, p-previous, l-last, s-search.</p>
+<p>Keyboard shortcuts: f-first page, n-next, p-previous, l-last,
+  s-search, r-running jobs, c-completed jobs, w-waiting jobs, a-all jobs.</p>
 <table id="jobhist" class="display nowrap" cellspacing="0"
        width="100%">
   <tbody>
@@ -116,6 +117,19 @@ function renderTable(jobhistData){
    Mousetrap.bind('s', function() {
       $('div.dataTables_filter input').focus();
     }, 'keyup');
+
+   Mousetrap.bind('r', function() {
+      jobhist.column(4).search('RUNNING').draw();           
+    });
+   Mousetrap.bind('c', function() {
+      jobhist.column(4).search('COMPLETED|TIMEOUT', true).draw();           
+    });
+   Mousetrap.bind('w', function() {
+      jobhist.column(4).search('PENDING').draw();           
+    });
+   Mousetrap.bind('a', function() {
+      jobhist.column(4).search('.', true).draw();           
+    });
 
 }
 

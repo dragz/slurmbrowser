@@ -17,8 +17,10 @@
 
 <p> <a href="nodeinfo.html"> nodeinfo </a> </p>
 <p>
-Keyboard shortcuts: f-first page, n-next, p-previous,
-l-last,s-search.<br>
+Keyboard shortcuts:<br>
+f-first page, n-next, p-previous, l-last, s-search. 
+a-all jobs, r-running jobs, w-waiting jobs<br>
+
 Click on jobid to display loadgraphs for job. Click on username to see
 the users job history since yesterday midnight.
 </p>
@@ -114,6 +116,8 @@ function renderTable(squeueData){
     } );
 //   document.getElementById('debug').innerHTML = ;
 
+   var orig_squeue = squeue;
+
    Mousetrap.bind('n', function() {
       squeue.page( 'next' ).draw( 'page' );
     });
@@ -129,6 +133,16 @@ function renderTable(squeueData){
    Mousetrap.bind('s', function() {
       $('div.dataTables_filter input').focus();
     }, 'keyup');
+
+   Mousetrap.bind('r', function() {
+      squeue.column(3).search('R').draw();           
+    });
+   Mousetrap.bind('w', function() {
+      squeue.column(3).search('[^R]', true).draw();           
+    });
+   Mousetrap.bind('a', function() {
+      squeue.column(3).search('.', true).draw();           
+    });
 
 }
 
