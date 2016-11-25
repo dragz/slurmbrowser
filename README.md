@@ -73,7 +73,7 @@ sacct -S YYYY-MM-DD -X --format=jobid,jobname,user,account,state,elapsed,start,e
 
 
 
-##Client side
+## Client side
 
 The client side is based on async fetching of json data from the
 server and all (or most) rendering of data is done by using the
