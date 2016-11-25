@@ -81,7 +81,12 @@ def returnjobinfo(jobid):
     print jobid
     s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
     if s:
-      j = dict(x.split('=', 1) for x in s)
+      j = dict()
+      for x in s:
+        y = x.split('=', 1)
+        if len(y) == 2:
+          j[y[0]] = y[1]
+        
       cpu_mapping = list()
       h = ['Nodes', 'CPU_IDs', 'Mem']
       nodelist = ""
