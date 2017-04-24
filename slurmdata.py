@@ -104,7 +104,7 @@ def returnjobinfo(jobid):
       #remark, these stats have a different format, leave it up to the client side
       #to fix it.
       yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
-      sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,nodelist --parsable2 -S %s --job %s"
+      sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,reqnodes,reqncpus,nodelist --parsable2 -S %s --job %s"
       s = os.popen(sacct % (yesterday, jobid), 'r').read()
       t = StringIO.StringIO(s)
       reader = csv.reader(t, delimiter='|')
@@ -138,13 +138,13 @@ def fetchgraph():
     try:
       # quick fix for hostname renaming until steinar gets the c100 nodes installed with new slurm-acceptable hostname.
       # c[fb]100-[1-9] is already OK.
-      fixedhosts = [ "cf100-%s"%i for i in range(1,10)] + [ "cb100-%s"%i for i in range(1,10)]
+#      fixedhosts = [ "cf100-%s"%i for i in range(1,10)] + [ "cb100-%s"%i for i in range(1,90)]
       hostname = request.query.hostname
-      if not hostname in fixedhosts:
-        if "100-" in hostname:
-          # transform c[fb]100-X to c100-X[fb]
-          fb = hostname[1]
-          hostname = hostname.replace(fb, "") + fb
+      # if not hostname in fixedhosts:
+      #   if "100-" in hostname:
+      #     # transform c[fb]100-X to c100-X[fb]
+      #     fb = hostname[1]
+      #     hostname = hostname.replace(fb, "") + fb
       graphurl = (graphurlbase.replace('GRAPH_NAME', request.query.name)
                               .replace('HOSTNAME',   hostname)
                               .replace('STARTTIME',  request.query.start)
