@@ -104,7 +104,7 @@ def returnjobinfo(jobid):
       #remark, these stats have a different format, leave it up to the client side
       #to fix it.
       yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
-      sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,reqnodes,reqncpus,nodelist --parsable2 -S %s --job %s"
+      sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,reqnodes,reqcpus,nodelist --parsable2 -S %s --job %s"
       s = os.popen(sacct % (yesterday, jobid), 'r').read()
       t = StringIO.StringIO(s)
       reader = csv.reader(t, delimiter='|')
