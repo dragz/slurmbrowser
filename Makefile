@@ -20,5 +20,5 @@ clean:
 	rm -f *~ *.tar.gz* *.pyc
 
 distclean: clean
-	rm -f hostlist.py moustrap.min.js
+	rm -f hostlist.py bottle.py mousetrap.min.js
 
