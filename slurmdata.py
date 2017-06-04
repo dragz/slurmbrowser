@@ -6,6 +6,8 @@ import datetime as dt
 from urllib2 import urlopen
 from pipes import quote
 
+from Metrics import Metrics, Filter
+
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
   sys.path.append(os.path.dirname(__file__))
@@ -76,6 +78,17 @@ def returnnodeinfo():
       nodeinfo.append(nl)
     return dict(headers=headers, nodeinfo=nodeinfo)
 
+
+def get_procs(nodelist):
+    host = "stallo-adm.local"
+    port = 8649
+
+    psinfo = Metrics(host=host, port=port, filter=Filter("ps-").startswith,
+                host_filter=Filter(hl=nodelist).hostlist)
+    return psinfo.items()
+
+
+
 @route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
 def returnjobinfo(jobid):
     print jobid
@@ -99,6 +112,7 @@ def returnjobinfo(jobid):
           nodelist = n.replace("NodeList=", "")
       j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
+      j['procs'] = get_procs(j['expanded_nodelist'])
     else:
       #not an active job, fetch finished job stats
       #remark, these stats have a different format, leave it up to the client side
@@ -127,6 +141,7 @@ def returnjobhist(user):
     for row in reader:
         jobs.append(map(convert, row))
     return dict(headers=headers, jobs=jobs)
+
 
 #
 # Proxy requests for graphs to backend so we do not have to expose it

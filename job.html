@@ -20,12 +20,40 @@
 </head>
 <body>
 <p> <a href="squeue.html"> squeue </a> </p>
-<table id="jobstats" class="display" cellspacing="10">
-<p id="debug"></p>
-<table id="cpumapping" class="display" cellspacing="0" 
-       width="20%" align="left">
+<table>
+  <tbody>
+    <tr>
+      <td>
+	<table id="jobstats" class="display" cellspacing="10">
+	</table>
+      </td>
+      <td>
+	<table id="cpumapping" class="display" cellspacing="0" 
+	       width="40%" align="left">
+	  <thead> 
+	    <th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
+	  </thead>
+	  <tbody>
+	  </tbody>
+	</table>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+<table id="jobprocs" class="display nowrap" cellspacing="0"
+       width="100%">
   <thead> 
-    <th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
+    <th>Node</th>
+    <th>User</th>
+    <th>Command</th>
+    <th>%CPU</th>
+    <th>%mem</th>
+    <th>VM</th>
+    <th>Data</th>
+    <th>Shared</th>
+    <th>Size</th>
   </thead>
   <tbody>
   </tbody>
@@ -84,9 +112,9 @@ function remap_jobinfo(jobinfo)
 function displayGraphs(jobinfo)
 {
    //URGH timezone issue!!! How do one get the clients TZ?
-   //ganglias rrdtool seems to use UTC so we are off by two hours
-   var start = (new Date(jobinfo['StartTime'])).getTime()/1000 - 3600 ;
-   var end   = (new Date(jobinfo['EndTime'])).getTime()/1000 - 3600 ;
+   //ganglias rrdtool seems to use UTC so we are off by one or two hours
+   var start = (new Date(jobinfo['StartTime'])).getTime()/1000 - 0*3600 ;
+   var end   = (new Date(jobinfo['EndTime'])).getTime()/1000 - 0*3600 ;
    var now   = (new Date()).getTime()/1000 - 3600 ;
    if (end > now) {
       end = "now";
@@ -173,10 +201,50 @@ function displayJobInfo(jobinfo) {
     }
 }
 
+function displayJobProcs(jobinfo)
+{
+   if (! jobinfo['procs']) {
+      document.getElementById('jobprocs').innerHTML = "";
+      return;
+   }
+
+   var procs = jobinfo['procs'];
+   var procinfo = [];
+
+   for (var i in procs) {
+       var hostname = procs[i][0];
+       var psdict = procs[i][1];
+       for (var j in psdict) {
+           var psinfo = psdict[j]["val"];
+           psinfo['hostname'] = hostname;
+           psinfo['ps'] = j;
+           procinfo.push(psinfo);
+       }
+   }
+
+   var procTable = $('#jobprocs').DataTable({
+         processing : true,
+         data : procinfo,
+         columns : [
+            { data: "hostname" },
+            { data: "user" },
+            { data: "cmd" },
+            { data: "%cpu" },
+            { data: "%mem" },
+            { data: "vm" },
+            { data: "data" },
+            { data: "shared" },
+            { data: "size" },
+          ],
+         order : [[ 3, "desc" ]] // sort by %cpu
+        } );
+}
+
 function renderPage(jobinfo)
 {
    jobinfo = remap_jobinfo(jobinfo);
    displayJobInfo(jobinfo);
+   displayJobProcs(jobinfo);
    displayGraphs(jobinfo);
 }
 
