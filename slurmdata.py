@@ -67,15 +67,16 @@ def returnsinfo():
 
 @route('/data/nodeinfo')
 def returnnodeinfo():
-    s = StringIO.StringIO(os.popen("scontrol show -d --oneliner node", 'r').read())
-    r = csv.reader(s, delimiter=" ")
-    firstrow = r.next()
-    del firstrow[-1]
-    headers = [ convert(c.split('=', 1)[0]) for c in firstrow]
-    nodeinfo = [[ convert(c.split('=', 1)[1]) for c in firstrow]]
-    for row in r:
-      nl = [ convert(c.split('=', 1)[1]) for c in row[:-2]]
-      nodeinfo.append(nl)
+    s = os.popen("scontrol show -d --oneliner node", 'r').readlines()
+    headers = [ e.split('=', 1)[0] for e in s[0].strip().split()]
+    nodeinfo = list()
+    for l in s:
+      nodedata = list()
+      for e in l.strip().split():
+        if e.startswith("Reason"):
+          break
+        nodedata.append(convert(e.split('=', 1)[1]))
+      nodeinfo.append(nodedata)
     return dict(headers=headers, nodeinfo=nodeinfo)
 
 
@@ -174,7 +175,7 @@ def fetchgraph():
     return graph
 
 if __name__ == "__main__":
-    run(host='localhost', port=8080, debug=True, reloader=True)
+    run(host='localhost', port=8081, debug=True, reloader=True)
 else:
     application = default_app()
 
