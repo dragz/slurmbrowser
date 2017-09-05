@@ -1,0 +1,14 @@
+[Unit]
+Description=Ganglia Process info collector
+After=network.target
+
+[Service]
+User=ganglia
+ExecStart=/usr/local/sbin/ganglia_ps_metric.py
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
+

@@ -3,17 +3,40 @@ import sys
 import csv
 import StringIO
 import datetime as dt
+import urllib2
 from urllib2 import urlopen
 from pipes import quote
-
-from Metrics import Metrics, Filter
+from ConfigParser import SafeConfigParser
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
-  sys.path.append(os.path.dirname(__file__))
-  os.chdir(os.path.dirname(__file__))
+    sys.path.append(os.path.dirname(__file__))
+    os.chdir(os.path.dirname(__file__))
 from bottle import route, run, static_file, request, response, default_app
 from hostlist import expand_hostlist
+from Metrics import Metrics, Filter
+
+
+config = SafeConfigParser()
+config.read('slurmbrowser.cfg')
+serverurl = config.get('Ganglia', 'serverurl')
+graphurl = config.get('Ganglia', 'graphurl')
+user = config.get('Ganglia', 'user')
+passwd = config.get('Ganglia', 'passwd')
+
+
+# graphurlbase should rather be configurable than hardwired. 
+# for stallo
+#graphurlbase = 'http://stallo-adm.local/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=ENDTIME'
+# for fram
+#graphurlbase = 'http://jump.cluster/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=frontends&s=descending&hc=4&mc=2&h=HOSTNAME&r=custom&cs=STARTTIME&ce=ENDTIME'
+# quick fix for auth on ganglia.
+if user:
+    auth_handler = urllib2.HTTPBasicAuthHandler()
+    auth_handler.add_password(realm = "Ganglia web UI", uri = serverurl,
+                              user = user, passwd = passwd)
+    opener = urllib2.build_opener(auth_handler)
+    urllib2.install_opener(opener)
 
 
 
@@ -85,7 +108,7 @@ def returnnodeinfo():
 
 
 def get_procs(nodelist):
-    host = "stallo-adm.local"
+    host = "jump.cluster"
     port = 8649
 
     psinfo = Metrics(host=host, port=port, filter=Filter("ps-").startswith,
@@ -153,25 +176,15 @@ def returnjobhist(user):
 #
 @route('/graph/')
 def fetchgraph():
-    # graphurlbase should rather be configurable than hardwired. 
-    graphurlbase = 'http://stallo-adm.local/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=ENDTIME'
+    global graphurl
     try:
-      # quick fix for hostname renaming until steinar gets the c100 nodes installed with new slurm-acceptable hostname.
-      # c[fb]100-[1-9] is already OK.
-#      fixedhosts = [ "cf100-%s"%i for i in range(1,10)] + [ "cb100-%s"%i for i in range(1,90)]
-      hostname = request.query.hostname
-      # if not hostname in fixedhosts:
-      #   if "100-" in hostname:
-      #     # transform c[fb]100-X to c100-X[fb]
-      #     fb = hostname[1]
-      #     hostname = hostname.replace(fb, "") + fb
-      graphurl = (graphurlbase.replace('GRAPH_NAME', request.query.name)
-                              .replace('HOSTNAME',   hostname)
-                              .replace('STARTTIME',  request.query.start)
-                              .replace('ENDTIME',    request.query.end)
+      hostgraphurl = (graphurl.replace('GRAPH_NAME', request.query.name)
+                           .replace('HOSTNAME',   request.query.hostname)
+                           .replace('STARTTIME',  request.query.start)
+                           .replace('ENDTIME',    request.query.end)
                   )
-      
-      graph = urlopen(graphurl)
+      #print hostgraphurl
+      graph = urlopen(hostgraphurl)
       response.set_header('Content-type', 'image/png')
     except Exception as e:
       print e
