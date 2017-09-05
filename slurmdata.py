@@ -68,16 +68,20 @@ def returnsinfo():
 @route('/data/nodeinfo')
 def returnnodeinfo():
     s = os.popen("scontrol show -d --oneliner node", 'r').readlines()
-    headers = [ e.split('=', 1)[0] for e in s[0].strip().split()]
     nodeinfo = list()
     for l in s:
-      nodedata = list()
+      nodedata = dict()
       for e in l.strip().split():
-        if e.startswith("Reason"):
+        k, v = e.split('=', 1)
+        print k, v
+        #down nodes need special treatment. The Reason= is the last field
+        if k.startswith('Reason'):
+          v = l[l.find('Reason=') + len('Reason='):].strip()
+          nodedata.update({k : convert(v)})
           break
-        nodedata.append(convert(e.split('=', 1)[1]))
+        nodedata.update({k : convert(v)})
       nodeinfo.append(nodedata)
-    return dict(headers=headers, nodeinfo=nodeinfo)
+    return {'nodeinfo' : nodeinfo}
 
 
 def get_procs(nodelist):

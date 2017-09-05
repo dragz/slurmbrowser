@@ -3,9 +3,11 @@
   <script src="https://code.jquery.com/jquery-1.12.3.js">
   </script>
   <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
+  <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
   </script>
 <head>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+<link rel="stylesheet" type="text/css"
+      href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
 <title>
 </title>
 </head>
@@ -29,21 +31,38 @@ function renderTable(nodeinfoData){
     var visibleCols = ["NodeName", "CPUTot", "CPUAlloc", "CPULoad",
     "RealMemory", "AllocMem", "FreeMem", "State"];
     
-    var headers = nodeinfoData['headers'];
     var nodes = nodeinfoData['nodeinfo'];
-    //visibleCols = headers;
-    var visibleIdx = [];
-    for (c in visibleCols) {
-        visibleIdx.push(headers.indexOf(visibleCols[c]));
-    }
-    var cols = [];
-    for (c in visibleCols) {
-        cols[c] = { title: visibleCols[c], data: visibleIdx[c] };
+
+    for (n in nodes) {
+       var hostinfo = nodes[n];
+       var cpualloc = hostinfo["CPUAlloc"];
+       var cpuload  = hostinfo["CPULoad"];
+       var loadperalloc;
+       if ( cpualloc >= 1 ) {
+          loadperalloc = cpuload / cpualloc;
+       }
+       else {
+          loadperalloc = 0.0;
+       }
+       hostinfo["LoadPerAlloc"] = loadperalloc.toFixed(2);
     }
 
     $('#nodeinfo').DataTable({
           data : nodes,
-          columns : cols,
+          columns : [
+            { data : "NodeName",   title : "NodeName" },
+            { data : "CPUTot",     title : "CPUTot" },
+            { data : "CPUAlloc",   title : "CPUAlloc" },
+            { data : "CPULoad",    title : "CPULoad", 
+                type: "any-number" },
+            { data : "LoadPerAlloc",    title : "LoadPerAlloc", 
+                type: "any-number" },
+            { data : "RealMemory", title : "RealMemory" },
+            { data : "AllocMem",   title : "AllocMem" },
+            { data : "FreeMem",    title : "FreeMem",
+                type: "any-number" },
+            { data : "State",      title : "State" }
+            ],
           order : [[ 1, "asc"]],
           pageLength : 50, 
           lengthMenu : [ [ 50, 100, -1], [ 50, 100, "All"] ],
@@ -51,7 +70,7 @@ function renderTable(nodeinfoData){
     } );
 }
 
-//Pull all queue info from the server as json and render the htmltable
+//Pull all node info from the server as json and render the htmltable
 getDataAsync("../data/nodeinfo", renderTable);
 </script>
 
