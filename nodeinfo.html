@@ -51,7 +51,7 @@ function renderTable(){
           if ( !(hostname in hostjobs)) {
              hostjobs[hostname] = [];
           }
-          hostjobs[hostname].push([job[jobid_idx], job[user_idx]].join(":"));
+          hostjobs[hostname].push({'jobid' : job[jobid_idx], 'user' : job[user_idx]});
        }
     }
 
@@ -69,14 +69,22 @@ function renderTable(){
        }
        hostinfo["LoadPerAlloc"] = loadperalloc;
        if ( hostinfo["NodeName"] in hostjobs) {
-          hostinfo["JOBS"] = hostjobs[hostinfo["NodeName"]].join(",");
+          hostinfo["JOBS"] = hostjobs[hostinfo["NodeName"]];
        }
        else {
           hostinfo["JOBS"] = "";
        }
     }
 
-
+    var render_joblist = function (data, type, row) {
+       var jobdisp = [];
+       for (var d in data) {
+          var j = data[d];
+          jobdisp.push("<a href=job.html?jobid=" + j['jobid'] + ">" + j['jobid'] + "</a>:"+
+                       "<a href=jobhist.html?user="+ j['user'] + ">" + j['user'] + "</a>");
+       }
+       return jobdisp.join(",");
+    }
     $('#nodeinfo').DataTable({
           data : nodes,
           columns : [
@@ -92,8 +100,10 @@ function renderTable(){
             { data : "FreeMem",    title : "FreeMem",
                 type: "any-number" },
             { data : "State",      title : "State" },
-            { data : "JOBS",       title : "JOBS" }
-            ],
+            { data : "JOBS",       title : "JOBS", 
+                      render : render_joblist
+            }
+          ],
           order : [[ 1, "asc"]],
           pageLength : 50, 
           lengthMenu : [ [ 50, 100, -1], [ 50, 100, "All"] ],
