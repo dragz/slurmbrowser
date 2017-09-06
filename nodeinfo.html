@@ -14,6 +14,8 @@
 <body>
 <p> <a href="squeue.html"> squeue </a> </p>
 
+<p> The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally,
+  it should be close to 1.0 on all nodes.</p>
 <table id="nodeinfo" class="display" cellspacing="0" width="100%"></table>
 
 <script>
@@ -26,26 +28,54 @@ function getDataAsync(url, callback) {
         success: callback
     });
 }
+var nodeinfoData;
+var queueinfoData;
 
-function renderTable(nodeinfoData){
+function renderTable(){
     var visibleCols = ["NodeName", "CPUTot", "CPUAlloc", "CPULoad",
     "RealMemory", "AllocMem", "FreeMem", "State"];
     
     var nodes = nodeinfoData['nodeinfo'];
 
-    for (n in nodes) {
+    var headers = queueinfoData['headers'];
+    var jobs = queueinfoData['jobs'];
+    var full_nodelist_idx = headers.indexOf("FULL_NODELIST");
+    var jobid_idx = headers.indexOf("JOBID");
+    var user_idx = headers.indexOf("USER");
+    var hostjobs = {};
+    for (var j in jobs) {
+       var job = jobs[j];
+       var hostlist = job[full_nodelist_idx].split(",");
+       for (var h in hostlist) {
+          var hostname = hostlist[h];
+          if ( !(hostname in hostjobs)) {
+             hostjobs[hostname] = [];
+          }
+          hostjobs[hostname].push([job[jobid_idx], job[user_idx]].join(":"));
+       }
+    }
+
+
+    for (var n in nodes) {
        var hostinfo = nodes[n];
        var cpualloc = hostinfo["CPUAlloc"];
        var cpuload  = hostinfo["CPULoad"];
        var loadperalloc;
        if ( cpualloc >= 1 ) {
-          loadperalloc = cpuload / cpualloc;
+          loadperalloc = (cpuload / cpualloc).toFixed(2);
        }
        else {
-          loadperalloc = 0.0;
+          loadperalloc = "N/A";
        }
-       hostinfo["LoadPerAlloc"] = loadperalloc.toFixed(2);
+       hostinfo["LoadPerAlloc"] = loadperalloc;
+       if ( hostinfo["NodeName"] in hostjobs) {
+          hostinfo["JOBS"] = hostjobs[hostinfo["NodeName"]].join(",");
+       }
+       else {
+          hostinfo["JOBS"] = "";
+       }
     }
+
 
     $('#nodeinfo').DataTable({
           data : nodes,
@@ -61,7 +91,8 @@ function renderTable(nodeinfoData){
             { data : "AllocMem",   title : "AllocMem" },
             { data : "FreeMem",    title : "FreeMem",
                 type: "any-number" },
-            { data : "State",      title : "State" }
+            { data : "State",      title : "State" },
+            { data : "JOBS",       title : "JOBS" }
             ],
           order : [[ 1, "asc"]],
           pageLength : 50, 
@@ -70,8 +101,25 @@ function renderTable(nodeinfoData){
     } );
 }
 
-//Pull all node info from the server as json and render the htmltable
-getDataAsync("../data/nodeinfo", renderTable);
+
+//Pull all node and job info from the server as json and render the htmltable
+
+var get_nodeinfo = $.getJSON("../data/nodeinfo",
+                       function (data) {
+                         nodeinfoData = data;
+                       });
+
+var get_queueinfo = $.getJSON("../data/squeue",
+                       function (data) {
+                         queueinfoData = data;
+                       });
+
+get_nodeinfo.done( function () {
+             get_queueinfo.done(renderTable);
+           });
+
+
+
 </script>
 
 </body>
