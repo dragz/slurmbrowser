@@ -96,7 +96,6 @@ def returnnodeinfo():
       nodedata = dict()
       for e in l.strip().split():
         k, v = e.split('=', 1)
-        print k, v
         #down nodes need special treatment. The Reason= is the last field
         if k.startswith('Reason'):
           v = l[l.find('Reason=') + len('Reason='):].strip()
@@ -108,9 +107,10 @@ def returnnodeinfo():
 
 
 def get_procs(nodelist):
-    host = "jump.cluster"
+    host = "stallo-adm.local"
     port = 8649
 
+    #nodelist = map(lambda x: x+'.local', nodelist)
     psinfo = Metrics(host=host, port=port, filter=Filter("ps-").startswith,
                 host_filter=Filter(hl=nodelist).hostlist)
     return psinfo.items()
@@ -119,7 +119,7 @@ def get_procs(nodelist):
 
 @route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
 def returnjobinfo(jobid):
-    print jobid
+    #print jobid
     s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
     if s:
       j = dict()
@@ -154,7 +154,7 @@ def returnjobinfo(jobid):
       jobinfo = map(convert, reader.next())
       j = dict(zip(headers, jobinfo))
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(j["NodeList"]))
-      print j
+      #print j
     return j
 
 @route('/data/jobhist/<user>')
