@@ -47,12 +47,11 @@
   <thead> 
     <th>Node</th>
     <th>User</th>
-    <th>State</th>
     <th>%CPU</th>
     <th>%mem</th>
     <th>VM</th>
     <th>RSS</th>
-    <th>Elapsed</th>
+    <th>Data </th>
     <th>Command</th>
   </thead>
   <tbody>
@@ -227,14 +226,13 @@ function displayJobProcs(jobinfo)
          data : procinfo,
          columns : [
             { data: "hostname" },
-            { data: "USER" },
-            { data: "S" },
-            { data: "%CPU" },
-            { data: "%MEM" },
-            { data: "VSZ" },
-            { data: "RSS" },
-            { data: "ELAPSED" },
-            { data: "COMMAND" },
+            { data: "user" },
+            { data: "%cpu" },
+            { data: "%mem" },
+            { data: "vm" },
+            { data: "size" },
+            { data: "data" },
+            { data: "cmd" },
           ],
          order : [[ 3, "desc" ]] // sort by %cpu
         } );
