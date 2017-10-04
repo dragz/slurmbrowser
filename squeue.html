@@ -2,7 +2,9 @@
 <html>
   <script src="https://code.jquery.com/jquery-1.12.3.js">
   </script>
-  <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
+  <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js">
+  </script>
+  <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
   </script>
   <script src="mousetrap.min.js">
   </script>
@@ -66,14 +68,21 @@ function link_to_jobinfo(data, type, row) {
           ">" + data + "</a>";
 }
 
-function renderTable(squeueData){
-    var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "PARTITION",
-    "QOS", "NODES", "CPUS", "MIN_MEMORY", "TIME_LEFT",
+var nodeinfoData;
+var queueinfoData;
+
+
+function renderTable(){
+    var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "SHARED", "PARTITION",
+    "QOS", "NODES", "AvgNodeLoad", "CPUS", "MIN_MEMORY", "TIME_LEFT",
     "TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
 
-    var headers = squeueData['headers'];
-    var jobs = squeueData['jobs'];
-    var visibleIdx = [];
+    var nodelist = nodeinfoData['nodeinfo'];
+    var headers = queueinfoData['headers'];
+    var jobs = queueinfoData['jobs'];
+
+    headers.push("AvgNodeLoad");
+     var visibleIdx = [];
     for (c in visibleCols) {
         visibleIdx.push(headers.indexOf(visibleCols[c]));
     }
@@ -81,6 +90,30 @@ function renderTable(squeueData){
     var full_nodelist_idx = headers.indexOf("FULL_NODELIST");
     var starttime_idx = headers.indexOf("START_TIME");
     var endtime_idx = headers.indexOf("END_TIME");
+    var state_idx = headers.indexOf("ST");
+
+    var nodes = {};
+    for (var n in nodelist) {
+       node = nodelist[n];
+       nodes[node["NodeName"]] = node;
+    }
+
+    for (var j in jobs) {
+        var job = jobs[j];
+        if (job[state_idx] === "R") {
+           var avgnodeload = 0.0;
+           var nodelist = job[full_nodelist_idx].split(",");
+           for (var n in nodelist) {
+               var nodename = nodelist[n];
+               avgnodeload = avgnodeload + nodes[nodename]["CPULoad"];
+           }
+           avgnodeload = avgnodeload/nodelist.length;
+           jobs[j].push(avgnodeload.toFixed(2));
+        }
+        else {
+           jobs[j].push("N/A");
+        }
+    }
 
     var cols = [];
     for (c in visibleCols) {
@@ -100,19 +133,20 @@ function renderTable(squeueData){
 	  columnDefs : [
                   { render : function(data, type, row) {
                                 return "<a href=job.html?jobid=" + data + 
-                                       ">" + data + "</a>";
-                               
+                                       ">" + data + "</a>";                               
                              },
                     targets : 0
                   },
                   { render : function(data, type, row) {
                                 return "<a href=jobhist.html?user=" + data + 
                                        ">" + data + "</a>";
-                               
                              },
                     targets : 1
+                  },
+                  { type : "any-number",
+                    targets : 8
                   }
-          ]
+               ]
     } );
 //   document.getElementById('debug').innerHTML = ;
 
@@ -147,7 +181,23 @@ function renderTable(squeueData){
 }
 
 //Pull all queue info from the server as json and render the htmltable
-getDataAsync("../data/squeue", renderTable);
+//getDataAsync("../data/squeue", renderTable);
+//Pull all node and job info from the server as json and render the htmltable
+
+var get_nodeinfo = $.getJSON("../data/nodeinfo",
+                       function (data) {
+                         nodeinfoData = data;
+                       });
+
+var get_queueinfo = $.getJSON("../data/squeue",
+                       function (data) {
+                         queueinfoData = data;
+                       });
+
+get_nodeinfo.done( function () {
+             get_queueinfo.done(renderTable);
+           });
+
 </script>
 
 <script>
