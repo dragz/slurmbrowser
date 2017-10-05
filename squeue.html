@@ -1,53 +1,51 @@
--*- mode: web-*-,
+<!-- -*- mode: web-*-, -->
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-  <script src="https://code.jquery.com/jquery-1.12.3.js">
-  </script>
-  <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js">
-  </script>
-  <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
-  </script>
-  <script src="mousetrap.min.js">
-  </script>
-<head>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
-<title>
-</title>
-</head>
-<body>
+    <script src="https://code.jquery.com/jquery-1.12.3.js">
+    </script>
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js">
+    </script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
+    </script>
+    <script src="mousetrap.min.js">
+    </script>
+    <head>
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+	<title>
+	</title>
+    </head>
+    <body>
 
-<p> <a href="nodeinfo.html"> nodeinfo </a> </p>
-<p id="totals"></p>
+	<p> <a href="nodeinfo.html"> nodeinfo </a> </p>
+	<p id="totals"></p>
 
+	<table id="squeue" class="display nowrap" cellspacing="0"
+	       width="100%">
+	    <tbody>
+		<trow>
+		    <td>
+			<img src="default.gif">
+		    </td>
+		</trow>
+	    </tbody>
+	</table>
+	<p>
+	    Keyboard shortcuts:<br>
+	    f-first page, n-next, p-previous, l-last, s-search. 
+	    a-all jobs, r-running jobs, w-waiting jobs<br>
 
+	    Click on jobid to display loadgraphs for job. Click on username to see
+	    the users job history since yesterday midnight.
+	</p>
 
-<table id="squeue" class="display nowrap" cellspacing="0"
-       width="100%">
-  <tbody>
-   <trow>
-     <td>
-     <img src="default.gif">
-     </td>
-   </trow>
-  </tbody>
-</table>
-<p>
-Keyboard shortcuts:<br>
-f-first page, n-next, p-previous, l-last, s-search. 
-a-all jobs, r-running jobs, w-waiting jobs<br>
-
-Click on jobid to display loadgraphs for job. Click on username to see
-the users job history since yesterday midnight.
-</p>
-
-<p>
-Credits:<br>
-Developed by <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a>
-using <a href="https://bottlepy.org">Bottle</a> for the server side and
-<a href="https://datatables.net/">Datatables</a>
-and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
-client side.
-</p>
+	<p>
+	    Credits:<br>
+	    Developed by <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a>
+	    using <a href="https://bottlepy.org">Bottle</a> for the server side and
+	    <a href="https://datatables.net/">Datatables</a>
+	    and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
+	    client side.
+	</p>
 
 <script>
 function link_to_jobinfo(data, type, row) {
