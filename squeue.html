@@ -122,18 +122,21 @@ function renderTable(){
 
      function getSum(l) {
 	 var s = 0;
-	 for (i in l) {
+	 for (var i in l) {
 	     s += l[i];
 	 }	    
 	 return s;
      }
 
-     document.getElementById('totals').innerHTML = "Allocated nodes=" +
-						   String(nodestates["ALLOCATED"]) +
-						   " Idle nodes=" + String(nodestates["IDLE"]) +
-						   " Total nodes=" + String(getSum(nodestates)) +
-						   " Allocated cpus=" + alloc_cpus +
-						   " Total cpus=" + total_cpus;
+     var totalstats = "Nodestates:";
+     for (var s in nodestates) {
+	 totalstats += " " + s + "=" + nodestates[s];
+     }
+     totalstats += "<br>CPUStats: Allocated= " + alloc_cpus
+		 + " Total= " + total_cpus;
+     totalstats += "<br>Jobstats: Running jobs= " + running_jobs
+	    + " Idle jobs= " + idle_jobs;
+     document.getElementById('totals').innerHTML = totalstats;
 
      var cols = [];
      for (c in visibleCols) {
@@ -195,7 +198,6 @@ function renderTable(){
      Mousetrap.bind('a', function() {
 	 squeue.column(3).search('.', true).draw();           
      });
-     
 }
 
 //Pull all node and job info from the server as json and render the htmltable
