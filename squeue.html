@@ -1,3 +1,4 @@
+-*- mode: web-*-,
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
   <script src="https://code.jquery.com/jquery-1.12.3.js">
@@ -65,157 +66,155 @@ var queueinfoData;
 
 
 function renderTable(){
-    document.getElementById('totals').innerHTML = "Got data, analyzing...";
-    var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "SHARED", "PARTITION",
-    "QOS", "NODES", "AvgNodeLoad", "CPUS", "MIN_MEMORY", "TIME_LEFT",
-    "TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
+     document.getElementById('totals').innerHTML = "Got data, analyzing...";
+     var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "SHARED", "PARTITION",
+			"QOS", "NODES", "AvgNodeLoad", "CPUS", "MIN_MEMORY", "TIME_LEFT",
+			"TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
 
-    var nodelist = nodeinfoData['nodeinfo'];
-    var headers = queueinfoData['headers'];
-    var jobs = queueinfoData['jobs'];
-
-    headers.push("AvgNodeLoad");
+     var nodelist = nodeinfoData['nodeinfo'];
+     var headers = queueinfoData['headers'];
+     var jobs = queueinfoData['jobs'];
+     
+     headers.push("AvgNodeLoad");
      var visibleIdx = [];
-    for (c in visibleCols) {
-        visibleIdx.push(headers.indexOf(visibleCols[c]));
-    }
+     for (c in visibleCols) {
+         visibleIdx.push(headers.indexOf(visibleCols[c]));
+     }
 
-    var full_nodelist_idx = headers.indexOf("FULL_NODELIST");
-    var starttime_idx = headers.indexOf("START_TIME");
-    var endtime_idx = headers.indexOf("END_TIME");
-    var state_idx = headers.indexOf("ST");
+     var full_nodelist_idx = headers.indexOf("FULL_NODELIST");
+     var starttime_idx = headers.indexOf("START_TIME");
+     var endtime_idx = headers.indexOf("END_TIME");
+     var state_idx = headers.indexOf("ST");
 
-    var nodes = {};
-    var nodestates = {};
-    var total_cpus = 0;
-    var alloc_cpus = 0;
-    for (var n in nodelist) {
-	node = nodelist[n];
-	nodes[node["NodeName"]] = node;
-	if ( ! nodestates[node["State"]] ) {
-            nodestates[node["State"]] = 0;
-	}
-	nodestates[node["State"]]++;
-	total_cpus += node["CPUTot"];
-	alloc_cpus += node["CPUAlloc"];
-    }
+     var nodes = {};
+     var nodestates = {};
+     var total_cpus = 0;
+     var alloc_cpus = 0;
+     for (var n in nodelist) {
+	 node = nodelist[n];
+	 nodes[node["NodeName"]] = node;
+	 if ( ! nodestates[node["State"]] ) {
+             nodestates[node["State"]] = 0;
+	 }
+	 nodestates[node["State"]]++;
+	 total_cpus += node["CPUTot"];
+	 alloc_cpus += node["CPUAlloc"];
+     }
 
-    var running_jobs = 0;
-    var idle_jobs = 0;
-    for (var j in jobs) {
-        var job = jobs[j];
-        if (job[state_idx] === "R") {
-           running_jobs++;
-           var avgnodeload = 0.0;
-           var nodelist = job[full_nodelist_idx].split(",");
-           for (var n in nodelist) {
-               var nodename = nodelist[n];
-               avgnodeload = avgnodeload + nodes[nodename]["CPULoad"];
-           }
-           avgnodeload = avgnodeload/nodelist.length;
-           jobs[j].push(avgnodeload.toFixed(2));
-        }
-        else {
-           idle_jobs++;
-           jobs[j].push("N/A");
-        }
-    }
+     var running_jobs = 0;
+     var idle_jobs = 0;
+     for (var j in jobs) {
+         var job = jobs[j];
+         if (job[state_idx] === "R") {
+             running_jobs++;
+             var avgnodeload = 0.0;
+             var nodelist = job[full_nodelist_idx].split(",");
+             for (var n in nodelist) {
+		 var nodename = nodelist[n];
+		 avgnodeload = avgnodeload + nodes[nodename]["CPULoad"];
+             }
+             avgnodeload = avgnodeload/nodelist.length;
+             jobs[j].push(avgnodeload.toFixed(2));
+         }
+         else {
+             idle_jobs++;
+             jobs[j].push("N/A");
+         }
+     }
 
-    function getSum(l) {
-	var s = 0;
-	for (i in l) {
-	    s += l[i];
-	}	    
-	return s;
-    }
+     function getSum(l) {
+	 var s = 0;
+	 for (i in l) {
+	     s += l[i];
+	 }	    
+	 return s;
+     }
 
-    document.getElementById('totals').innerHTML = "Allocated nodes=" +
-	String(nodestates["ALLOCATED"]) +
-	" Idle nodes=" + String(nodestates["IDLE"]) +
-	" Total nodes=" + String(getSum(nodestates)) +
-	" Allocated cpus=" + alloc_cpus +
-	" Total cpus=" + total_cpus;
+     document.getElementById('totals').innerHTML = "Allocated nodes=" +
+						   String(nodestates["ALLOCATED"]) +
+						   " Idle nodes=" + String(nodestates["IDLE"]) +
+						   " Total nodes=" + String(getSum(nodestates)) +
+						   " Allocated cpus=" + alloc_cpus +
+						   " Total cpus=" + total_cpus;
 
-    var cols = [];
-    for (c in visibleCols) {
-        cols[c] = { title: visibleCols[c], data: visibleIdx[c],
-                    className: "dt-body-right" };
-    }
-    cols[cols.length-1].className = "dt-body-left";
+     var cols = [];
+     for (c in visibleCols) {
+         cols[c] = { title: visibleCols[c], data: visibleIdx[c],
+                     className: "dt-body-right" };
+     }
+     cols[cols.length-1].className = "dt-body-left";
+     
+     var squeue = $('#squeue').DataTable({
+         data : jobs,
+         columns : cols,
+         order : [[ endtime_idx, "asc"]], // default ordering is END_TIME
+         pageLength : 25, 
+         lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
+         scrollX : true,
+         stateSave : true,
+	 columnDefs : [
+             { render : function(data, type, row) {
+                 return "<a href=job.html?jobid=" + data + 
+                        ">" + data + "</a>";                               
+             },
+               targets : 0
+             },
+             { render : function(data, type, row) {
+                 return "<a href=jobhist.html?user=" + data + 
+                        ">" + data + "</a>";
+             },
+               targets : 1
+             },
+             { type : "any-number",
+               targets : 8
+             }
+         ]
+     } );
 
-    var squeue = $('#squeue').DataTable({
-          data : jobs,
-          columns : cols,
-          order : [[ endtime_idx, "asc"]], // default ordering is END_TIME
-          pageLength : 25, 
-          lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
-          scrollX : true,
-          stateSave : true,
-	  columnDefs : [
-                  { render : function(data, type, row) {
-                                return "<a href=job.html?jobid=" + data + 
-                                       ">" + data + "</a>";                               
-                             },
-                    targets : 0
-                  },
-                  { render : function(data, type, row) {
-                                return "<a href=jobhist.html?user=" + data + 
-                                       ">" + data + "</a>";
-                             },
-                    targets : 1
-                  },
-                  { type : "any-number",
-                    targets : 8
-                  }
-               ]
-    } );
-
-
-    var orig_squeue = squeue;
-
-   Mousetrap.bind('n', function() {
-      squeue.page( 'next' ).draw( 'page' );
-    });
-   Mousetrap.bind('p', function() {
-      squeue.page( 'previous' ).draw( 'page' );
-    });
-   Mousetrap.bind('f', function() {
-      squeue.page( 'first' ).draw( 'page' );
-    });
-   Mousetrap.bind('l', function() {
-      squeue.page( 'last' ).draw( 'page' );
-    });
-   Mousetrap.bind('s', function() {
-      $('div.dataTables_filter input').focus();
-    }, 'keyup');
-
-   Mousetrap.bind('r', function() {
-      squeue.column(3).search('R').draw();           
-    });
-   Mousetrap.bind('w', function() {
-      squeue.column(3).search('[^R]', true).draw();           
-    });
-   Mousetrap.bind('a', function() {
-      squeue.column(3).search('.', true).draw();           
-    });
-
+     
+     Mousetrap.bind('n', function() {
+	 squeue.page( 'next' ).draw( 'page' );
+     });
+     Mousetrap.bind('p', function() {
+	 squeue.page( 'previous' ).draw( 'page' );
+     });
+     Mousetrap.bind('f', function() {
+	 squeue.page( 'first' ).draw( 'page' );
+     });
+     Mousetrap.bind('l', function() {
+	 squeue.page( 'last' ).draw( 'page' );
+     });
+     Mousetrap.bind('s', function() {
+	 $('div.dataTables_filter input').focus();
+     }, 'keyup');
+     
+     Mousetrap.bind('r', function() {
+	 squeue.column(3).search('R').draw();           
+     });
+     Mousetrap.bind('w', function() {
+	 squeue.column(3).search('[^R]', true).draw();           
+     });
+     Mousetrap.bind('a', function() {
+	 squeue.column(3).search('.', true).draw();           
+     });
+     
 }
 
 //Pull all node and job info from the server as json and render the htmltable
 
 var get_nodeinfo = $.getJSON("../data/nodeinfo",
-                       function (data) {
-                         nodeinfoData = data;
-                       });
+			     function (data) {
+				 nodeinfoData = data;
+			     });
 
-var get_queueinfo = $.getJSON("../data/squeue",
-                       function (data) {
-                         queueinfoData = data;
-                       });
-
-get_nodeinfo.done( function () {
-             get_queueinfo.done(renderTable);
-           });
+ var get_queueinfo = $.getJSON("../data/squeue",
+			       function (data) {
+				   queueinfoData = data;
+			       });
+ 
+ get_nodeinfo.done( function () {
+     get_queueinfo.done(renderTable);
+ });
 
 </script>
 
@@ -224,3 +223,4 @@ get_nodeinfo.done( function () {
 
 </body>
 </html>
+
