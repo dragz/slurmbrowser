@@ -15,17 +15,10 @@
 </head>
 <body>
 
-<p id="debug"></p>
-
 <p> <a href="nodeinfo.html"> nodeinfo </a> </p>
-<p>
-Keyboard shortcuts:<br>
-f-first page, n-next, p-previous, l-last, s-search. 
-a-all jobs, r-running jobs, w-waiting jobs<br>
+<p id="totals"></p>
 
-Click on jobid to display loadgraphs for job. Click on username to see
-the users job history since yesterday midnight.
-</p>
+
 
 <table id="squeue" class="display nowrap" cellspacing="0"
        width="100%">
@@ -38,6 +31,15 @@ the users job history since yesterday midnight.
   </tbody>
 </table>
 <p>
+Keyboard shortcuts:<br>
+f-first page, n-next, p-previous, l-last, s-search. 
+a-all jobs, r-running jobs, w-waiting jobs<br>
+
+Click on jobid to display loadgraphs for job. Click on username to see
+the users job history since yesterday midnight.
+</p>
+
+<p>
 Credits:<br>
 Developed by <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a>
 using <a href="https://bottlepy.org">Bottle</a> for the server side and
@@ -47,16 +49,6 @@ client side.
 </p>
 
 <script>
-// cutnpaste from stackexchange
-function getDataAsync(url, callback) {
-    $.ajax({
-        async: true,
-        url: url,
-        dataType: 'json',
-        success: callback
-    });
-}
-
 function link_to_jobinfo(data, type, row) {
    var start = row[starttime_idx];
    var end = row[endtime_idx];
@@ -73,6 +65,7 @@ var queueinfoData;
 
 
 function renderTable(){
+    document.getElementById('totals').innerHTML = "Got data, analyzing...";
     var visibleCols = ["JOBID", "USER", "ACCOUNT", "ST", "SHARED", "PARTITION",
     "QOS", "NODES", "AvgNodeLoad", "CPUS", "MIN_MEMORY", "TIME_LEFT",
     "TIME_LIMIT", "START_TIME", "END_TIME", "NODELIST(REASON)"];
@@ -93,14 +86,26 @@ function renderTable(){
     var state_idx = headers.indexOf("ST");
 
     var nodes = {};
+    var nodestates = {};
+    var total_cpus = 0;
+    var alloc_cpus = 0;
     for (var n in nodelist) {
-       node = nodelist[n];
-       nodes[node["NodeName"]] = node;
+	node = nodelist[n];
+	nodes[node["NodeName"]] = node;
+	if ( ! nodestates[node["State"]] ) {
+            nodestates[node["State"]] = 0;
+	}
+	nodestates[node["State"]]++;
+	total_cpus += node["CPUTot"];
+	alloc_cpus += node["CPUAlloc"];
     }
 
+    var running_jobs = 0;
+    var idle_jobs = 0;
     for (var j in jobs) {
         var job = jobs[j];
         if (job[state_idx] === "R") {
+           running_jobs++;
            var avgnodeload = 0.0;
            var nodelist = job[full_nodelist_idx].split(",");
            for (var n in nodelist) {
@@ -111,9 +116,25 @@ function renderTable(){
            jobs[j].push(avgnodeload.toFixed(2));
         }
         else {
+           idle_jobs++;
            jobs[j].push("N/A");
         }
     }
+
+    function getSum(l) {
+	var s = 0;
+	for (i in l) {
+	    s += l[i];
+	}	    
+	return s;
+    }
+
+    document.getElementById('totals').innerHTML = "Allocated nodes=" +
+	String(nodestates["ALLOCATED"]) +
+	" Idle nodes=" + String(nodestates["IDLE"]) +
+	" Total nodes=" + String(getSum(nodestates)) +
+	" Allocated cpus=" + alloc_cpus +
+	" Total cpus=" + total_cpus;
 
     var cols = [];
     for (c in visibleCols) {
@@ -148,9 +169,9 @@ function renderTable(){
                   }
                ]
     } );
-//   document.getElementById('debug').innerHTML = ;
 
-   var orig_squeue = squeue;
+
+    var orig_squeue = squeue;
 
    Mousetrap.bind('n', function() {
       squeue.page( 'next' ).draw( 'page' );
@@ -180,8 +201,6 @@ function renderTable(){
 
 }
 
-//Pull all queue info from the server as json and render the htmltable
-//getDataAsync("../data/squeue", renderTable);
 //Pull all node and job info from the server as json and render the htmltable
 
 var get_nodeinfo = $.getJSON("../data/nodeinfo",
