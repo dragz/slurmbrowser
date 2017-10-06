@@ -26,6 +26,36 @@
 	 return timespec_to_seconds(d);
      };
 
+     // copypasted from file-size sort plugin.
+     $.fn.dataTable.ext.type.order['mem-size-pre'] = function ( data ) {
+	 var matches = data.match( /^(\d+(?:\.\d+)?)([a-z]+)/i );
+	 var multipliers = {
+             b:  1,
+             bytes: 1,
+             kb: 1000,
+             kib: 1024,
+             k: 1024,
+             mb: 1000000,
+             mib: 1048576,
+             m: 1048576,
+             gb: 1000000000,
+             gib: 1073741824,
+             g: 1073741824,
+             tb: 1000000000000,
+             tib: 1099511627776,
+             t: 1099511627776,
+             pb: 1000000000000000,
+             pib: 1125899906842624,
+             p: 1125899906842624
+	 };
+
+	 if (matches) {
+             var multiplier = multipliers[matches[2].toLowerCase()];
+             return parseFloat( matches[1] ) * multiplier;
+	 } else {
+             return -1;
+	 };
+     };
     </script>
     <head>
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
@@ -188,6 +218,9 @@ function renderTable(){
                         ">" + data + "</a>";
              },
                targets : 1
+             },
+             { type : "mem-size",
+               targets : visibleCols.indexOf("MIN_MEMORY")
              },
              { type : "any-number",
                targets : visibleCols.indexOf("AvgNodeLoad")
