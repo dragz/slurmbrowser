@@ -60,6 +60,7 @@
     <head>
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
         <title>
+	    Squeue
         </title>
     </head>
     <body>
@@ -188,7 +189,7 @@ function renderTable(){
      totalstats += "<br>CPUStats: Allocated= " + alloc_cpus
                  + " Total= " + total_cpus;
      totalstats += "<br>Jobstats: Running jobs= " + running_jobs
-            + " Idle jobs= " + idle_jobs;
+		 + " Idle jobs= " + idle_jobs;
      document.getElementById('totals').innerHTML = totalstats;
 
      var cols = [];
@@ -222,7 +223,13 @@ function renderTable(){
              { type : "mem-size",
                targets : visibleCols.indexOf("MIN_MEMORY")
              },
-             { type : "any-number",
+             { render : function(data, type, row) {
+		 var c = "black";
+		 if (data < 15.0) {
+		     c = "red";
+		 }
+                 return "<span style=color:" + c + ">" +  data + "</span>";},
+	       type : "any-number",
                targets : visibleCols.indexOf("AvgNodeLoad")
              },
              { type : "timespec",
