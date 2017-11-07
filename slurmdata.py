@@ -14,29 +14,28 @@ if not __name__ == "__main__":
     os.chdir(os.path.dirname(__file__))
 from bottle import route, run, static_file, request, response, default_app
 from hostlist import expand_hostlist
-from Metrics import Metrics, Filter
 
+GANGLIA = 0
+try:
+    from Metrics import Metrics, Filter
+except ImportError:
+    GANGLIA = 0
 
 config = SafeConfigParser()
 config.read('slurmbrowser.cfg')
-serverurl = config.get('Ganglia', 'serverurl')
-graphurl = config.get('Ganglia', 'graphurl')
-user = config.get('Ganglia', 'user')
-passwd = config.get('Ganglia', 'passwd')
 
+if GANGLIA:
+    serverurl = config.get('Ganglia', 'serverurl')
+    graphurl = config.get('Ganglia', 'graphurl')
+    user = config.get('Ganglia', 'user')
+    passwd = config.get('Ganglia', 'passwd')
 
-# graphurlbase should rather be configurable than hardwired. 
-# for stallo
-#graphurlbase = 'http://stallo-adm.local/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=Stallo&s=descending&hc=4&mc=2&h=HOSTNAME.local&r=custom&cs=STARTTIME&ce=ENDTIME'
-# for fram
-#graphurlbase = 'http://jump.cluster/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=frontends&s=descending&hc=4&mc=2&h=HOSTNAME&r=custom&cs=STARTTIME&ce=ENDTIME'
-# quick fix for auth on ganglia.
-if user:
-    auth_handler = urllib2.HTTPBasicAuthHandler()
-    auth_handler.add_password(realm = "Ganglia web UI", uri = serverurl,
-                              user = user, passwd = passwd)
-    opener = urllib2.build_opener(auth_handler)
-    urllib2.install_opener(opener)
+    if user:
+        auth_handler = urllib2.HTTPBasicAuthHandler()
+        auth_handler.add_password(realm = "Ganglia web UI", uri = serverurl,
+                                  user = user, passwd = passwd)
+        opener = urllib2.build_opener(auth_handler)
+        urllib2.install_opener(opener)
 
 
 
@@ -107,7 +106,7 @@ def returnnodeinfo():
 
 
 def get_procs(nodelist):
-    host = "stallo-adm.local"
+    host = "jump.cluster"
     port = 8649
 
     #nodelist = map(lambda x: x+'.local', nodelist)
@@ -119,6 +118,7 @@ def get_procs(nodelist):
 
 @route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
 def returnjobinfo(jobid):
+    global GANGLIA
     #print jobid
     s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
     if s:
@@ -154,6 +154,7 @@ def returnjobinfo(jobid):
       jobinfo = map(convert, reader.next())
       j = dict(zip(headers, jobinfo))
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(j["NodeList"]))
+    j['GANGLIA'] = GANGLIA
       #print j
     return j
 

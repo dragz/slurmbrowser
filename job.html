@@ -240,10 +240,12 @@ function displayJobProcs(jobinfo)
 
 function renderPage(jobinfo)
 {
-   jobinfo = remap_jobinfo(jobinfo);
-   displayJobInfo(jobinfo);
-   displayJobProcs(jobinfo);
-   displayGraphs(jobinfo);
+     jobinfo = remap_jobinfo(jobinfo);
+     displayJobInfo(jobinfo);
+     if (jobinfo['GANGLIA'] === 1) {
+	 displayJobProcs(jobinfo);
+	 displayGraphs(jobinfo);
+     }
 }
 
 getDataAsync("../data/job/" + jobid, renderPage);
