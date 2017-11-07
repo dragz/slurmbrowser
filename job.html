@@ -44,18 +44,6 @@
 
 <table id="jobprocs" class="display nowrap" cellspacing="0"
        width="100%">
-  <thead> 
-    <th>Node</th>
-    <th>User</th>
-    <th>%CPU</th>
-    <th>%mem</th>
-    <th>VM</th>
-    <th>RSS</th>
-    <th>Data </th>
-    <th>Command</th>
-  </thead>
-  <tbody>
-  </tbody>
 </table>
 <table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
 
@@ -225,14 +213,14 @@ function displayJobProcs(jobinfo)
          processing : true,
          data : procinfo,
          columns : [
-            { data: "hostname" },
-            { data: "user" },
-            { data: "%cpu" },
-            { data: "%mem" },
-            { data: "vm" },
-            { data: "size" },
-            { data: "data" },
-            { data: "cmd" },
+            { title: "Node", data: "hostname" },
+            { title: "User", data: "user" },
+            { title: "%CPU", data: "%cpu" },
+            { title: "%mem", data: "%mem" },
+            { title: "VM",   data: "vm" },
+            { title: "RSS",  data: "size" },
+            { title: "Data", data: "data" },
+            { title: "Command", data: "cmd" },
           ],
          order : [[ 3, "desc" ]] // sort by %cpu
         } );
