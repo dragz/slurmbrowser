@@ -16,7 +16,8 @@ if not __name__ == "__main__":
 from bottle import route, run, static_file, request, response, default_app
 from hostlist import expand_hostlist
 
-GANGLIA = 0
+GANGLIA = 1
+GANGLIA_PROCS = 0
 try:
     from Metrics import Metrics, Filter
 except ImportError:
@@ -148,7 +149,8 @@ def returnjobinfo(jobid):
           nodelist = n.replace("NodeList=", "")
       j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
-      j['procs'] = get_procs(j['expanded_nodelist'])
+      if GANGLIA and GANGLIA_PROCS:
+          j['procs'] = get_procs(j['expanded_nodelist'])
     else:
       #not an active job, fetch finished job stats
       #remark, these stats have a different format, leave it up to the client side
@@ -163,8 +165,8 @@ def returnjobinfo(jobid):
       j = dict(zip(headers, jobinfo))
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(j["NodeList"]))
     j['GANGLIA'] = GANGLIA
-      #print j
-      print "jobinfo", time.time() - t0
+    #print j
+    print "jobinfo", time.time() - t0
     return j
 
 @route('/data/jobhist/<user>')
