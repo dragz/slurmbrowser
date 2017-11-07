@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import StringIO
+import time
 import datetime as dt
 import urllib2
 from urllib2 import urlopen
@@ -54,6 +55,7 @@ def convert(a):
         return b
 
 def get_squeue_data():
+    t0 = time.time()
     queuedata = StringIO.StringIO(os.popen("squeue -o %all", 'r').read())
     reader = csv.reader(queuedata, delimiter='|')
     headers = map(convert, reader.next())
@@ -64,6 +66,7 @@ def get_squeue_data():
         full_hostlist = map(str.strip, expand_hostlist(row[hl_idx]))
         row.append(str(',').join(full_hostlist))
         rows.append(map(convert, row))
+    print "squeue", time.time() - t0
 
     return {'headers' : headers, 'jobs': rows}
 
@@ -72,6 +75,7 @@ def returnsqueue():
     return get_squeue_data()
 
 def get_sinfo_data():
+    t0 = time.time()
     queuedata = StringIO.StringIO(os.popen("sinfo -o %all", 'r').read())
     reader = csv.reader(queuedata, delimiter='|')
     nodelist = set()
@@ -82,6 +86,7 @@ def get_sinfo_data():
         if not row[hostnameIdx] in nodelist:
             rows.append(map(convert, row))
             nodelist.add(row[hostnameIdx])
+    print "sinfo", time.time() - t0
     return {'headers' : headers, 'nodes' : rows }
 
 @route('/data/sinfo')
@@ -90,6 +95,7 @@ def returnsinfo():
 
 @route('/data/nodeinfo')
 def returnnodeinfo():
+    t0 = time.time()
     s = os.popen("scontrol show -d --oneliner node", 'r').readlines()
     nodeinfo = list()
     for l in s:
@@ -103,6 +109,7 @@ def returnnodeinfo():
           break
         nodedata.update({k : convert(v)})
       nodeinfo.append(nodedata)
+    print "nodeinfo ", time.time() - t0
     return {'nodeinfo' : nodeinfo}
 
 
@@ -119,6 +126,7 @@ def get_procs(nodelist):
 
 @route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
 def returnjobinfo(jobid):
+    t0 = time.time()
     #print jobid
     s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
     if s:
@@ -155,10 +163,12 @@ def returnjobinfo(jobid):
       j = dict(zip(headers, jobinfo))
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(j["NodeList"]))
       #print j
+      print "jobinfo", time.time() - t0
     return j
 
 @route('/data/jobhist/<user>')
 def returnjobhist(user):
+    t0 = time.time()
     yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
     sacct = "sacct -S %s -X --format=jobid,jobname,user,account,state,elapsed,start,end,nnodes,ncpus,nodelist --parsable2 -u %s" % (yesterday, quote(user))
     s = os.popen(sacct, 'r').read()
@@ -168,6 +178,7 @@ def returnjobhist(user):
     jobs = list()
     for row in reader:
         jobs.append(map(convert, row))
+    print "jobhist", time.time() - t0
     return dict(headers=headers, jobs=jobs)
 
 
