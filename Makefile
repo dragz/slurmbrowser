@@ -16,6 +16,9 @@ bootstrap:
 
 	wget https://craig.global.ssl.fastly.net/js/mousetrap/mousetrap.min.js
 
+install:
+	cp slurmdata.py Metrics.py squeue.html nodeinfo.html job.html jobhist.html /var/www/slurmbrowser/
+
 clean:
 	rm -f *~ *.tar.gz* *.pyc
 
