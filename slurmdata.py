@@ -17,14 +17,12 @@ from bottle import route, run, static_file, request, response, default_app
 from hostlist import expand_hostlist
 
 GANGLIA = 1
-GANGLIA_PROCS = 0
-try:
-    from Metrics import Metrics, Filter
-except ImportError:
-    GANGLIA = 0
-
+GANGLIA_PROC = 1
 config = SafeConfigParser()
 config.read('slurmbrowser.cfg')
+GANGLIA = int(config.get('MAIN', 'ganglia'))
+GANGLIA_PROC = int(config.get('MAIN', 'ganglia_proc'))
+
 
 if GANGLIA:
     serverurl = config.get('Ganglia', 'serverurl')
@@ -38,6 +36,13 @@ if GANGLIA:
                                   user = user, passwd = passwd)
         opener = urllib2.build_opener(auth_handler)
         urllib2.install_opener(opener)
+
+    try:
+        from Metrics import Metrics, Filter
+    except ImportError:
+        print "No ganglia interface, disabling ganglia graph and proc support."
+        GANGLIA = 0
+        GANGLIA_PROC = 0
 
 
 
@@ -126,7 +131,7 @@ def get_procs(nodelist):
 
 @route('/data/job/<jobid:re:\d+_?\[?\d*\]?>')
 def returnjobinfo(jobid):
-    global GANGLIA
+    global GANGLIA, GANGLIA_PROC
     t0 = time.time()
     #print jobid
     s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
@@ -149,7 +154,8 @@ def returnjobinfo(jobid):
           nodelist = n.replace("NodeList=", "")
       j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
-      if GANGLIA and GANGLIA_PROCS:
+      if GANGLIA == 1 and GANGLIA_PROC == 1:
+          print GANGLIA, GANGLIA_PROC
           j['procs'] = get_procs(j['expanded_nodelist'])
     else:
       #not an active job, fetch finished job stats
