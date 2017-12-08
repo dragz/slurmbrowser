@@ -184,7 +184,7 @@ function displayJobInfo(jobinfo) {
            info : false,
            columnDefs : [
              { render : function(data, type, row) {
-                      return data.toString().replace(/,c/g, " c");
+                      return data.toString().replace(/,c/g, " c").replace(/-/g,"&#8209;");
                       },
                targets : 0
              } 
