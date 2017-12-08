@@ -65,11 +65,8 @@ def get_squeue_data():
     reader = csv.reader(queuedata, delimiter='|')
     headers = map(convert, reader.next())
     hl_idx = headers.index("NODELIST(REASON)")
-    headers.append("FULL_NODELIST")
     rows = list()
     for row in reader:
-        full_hostlist = map(str.strip, expand_hostlist(row[hl_idx]))
-        row.append(str(',').join(full_hostlist))
         rows.append(map(convert, row))
     print "squeue", time.time() - t0
 
