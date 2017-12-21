@@ -62,13 +62,14 @@ def convert(a):
 def get_squeue_data():
     t0 = time.time()
     queuedata = StringIO.StringIO(os.popen("squeue -o %all", 'r').read())
+    print "fetchinge quedata took ", time.time() - t0
     reader = csv.reader(queuedata, delimiter='|')
     headers = map(convert, reader.next())
     hl_idx = headers.index("NODELIST(REASON)")
     rows = list()
     for row in reader:
         rows.append(map(convert, row))
-    print "squeue", time.time() - t0
+    print "total squeue", time.time() - t0
 
     return {'headers' : headers, 'jobs': rows}
 
@@ -116,7 +117,7 @@ def returnnodeinfo():
 
 
 def get_procs(nodelist):
-    host = "jump.cluster"
+    host = "stallo-adm.local"
     port = 8649
 
     #nodelist = map(lambda x: x+'.local', nodelist)
@@ -152,7 +153,7 @@ def returnjobinfo(jobid):
       j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
       if GANGLIA == 1 and GANGLIA_PROC == 1:
-          print GANGLIA, GANGLIA_PROC
+          print j['expanded_nodelist']
           j['procs'] = get_procs(j['expanded_nodelist'])
     else:
       #not an active job, fetch finished job stats

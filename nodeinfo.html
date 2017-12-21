@@ -5,6 +5,10 @@
   <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
   <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js">
+  </script>
+  <script src="./utils.js">
+  </script>
 <head>
 <link rel="stylesheet" type="text/css"
       href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
@@ -39,13 +43,13 @@ function renderTable(){
 
     var headers = queueinfoData['headers'];
     var jobs = queueinfoData['jobs'];
-    var full_nodelist_idx = headers.indexOf("FULL_NODELIST");
+    var nodelist_idx = headers.indexOf("NODELIST(REASON)");
     var jobid_idx = headers.indexOf("JOBID");
     var user_idx = headers.indexOf("USER");
     var hostjobs = {};
     for (var j in jobs) {
        var job = jobs[j];
-       var hostlist = job[full_nodelist_idx].split(",");
+       var hostlist = expand_nodelist(job[nodelist_idx]);
        for (var h in hostlist) {
           var hostname = hostlist[h];
           if ( !(hostname in hostjobs)) {

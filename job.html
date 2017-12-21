@@ -114,7 +114,7 @@ function displayGraphs(jobinfo)
    if (end > now) {
       end = "now";
    }
-   var hostlist = expand_nodelist(jobinfo['nodelist']);
+   var hostlist = expand_nodelist(jobinfo['NodeList']);
    var base_graph_url = "<IMG SRC='../graph/?name=GRAPH_NAME&hostname=HOSTNAME&start=STARTTIME&end=ENDTIME'>";
 
    var graphlist = ["load_report",
