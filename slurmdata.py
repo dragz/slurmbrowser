@@ -23,7 +23,6 @@ config.read('slurmbrowser.cfg')
 GANGLIA = int(config.get('MAIN', 'ganglia'))
 GANGLIA_PROC = int(config.get('MAIN', 'ganglia_proc'))
 
-
 if GANGLIA:
     serverurl = config.get('Ganglia', 'serverurl')
     graphurl = config.get('Ganglia', 'graphurl')
@@ -45,6 +44,41 @@ if GANGLIA:
         GANGLIA_PROC = 0
 
 
+#
+# This section of code is only used when producing screencasts
+# all it does is hide the real usernames 
+#
+OBFUSCATE_USERNAMES=0
+
+def obfuscated_usernames():
+    """hide usernames when producing images or videos"""
+    usernames = os.popen("squeue -h -o %u","r").readlines()
+    uu = set(map(str.strip, usernames))
+    a = ord('a')
+    z = ord('z')
+    ou = [ chr(s)+chr(t)+"user" for s in range(ord('a'), ord('z')+1) for t in range(ord('a'), ord('z')+1)]
+    usermap = zip(uu, ou)
+    return usermap
+
+def hide_usernames(t):
+    global OBFUSCATED_USERNAMES
+    if OBFUSCATED_USERNAMES:
+        um = obfuscated_usernames()
+        for u, o in um:
+            t = t.replace(u,o)
+    return t
+
+def reverse_hidden_user(user):
+    global OBFUSCATED_USERNAMES
+    if OBFUSCATED_USERNAMES:
+        usermap = obfuscated_usernames()
+        for u, o in usermap:
+            if o == user:
+                return u
+    return user
+#
+#
+#
 
 @route('/html/<filename>')
 def server_static(filename):
@@ -61,8 +95,10 @@ def convert(a):
 
 def get_squeue_data():
     t0 = time.time()
-    queuedata = StringIO.StringIO(os.popen("squeue -o %all", 'r').read())
-    print "fetchinge quedata took ", time.time() - t0
+    squeue = os.popen("squeue -o %all", 'r').read()
+    squeue = hide_usernames(squeue)
+    queuedata = StringIO.StringIO(squeue)
+    print "fetching quedata took ", time.time() - t0
     reader = csv.reader(queuedata, delimiter='|')
     headers = map(convert, reader.next())
     hl_idx = headers.index("NODELIST(REASON)")
@@ -132,7 +168,7 @@ def returnjobinfo(jobid):
     global GANGLIA, GANGLIA_PROC
     t0 = time.time()
     #print jobid
-    s = os.popen("scontrol show -d --oneliner job " + str(jobid)).read().split()
+    s = hide_usernames(os.popen("scontrol show -d --oneliner job " + str(jobid)).read()).split()
     if s:
       j = dict()
       for x in s:
@@ -161,7 +197,7 @@ def returnjobinfo(jobid):
       #to fix it.
       yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
       sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,reqnodes,reqcpus,nodelist --parsable2 -S %s --job %s"
-      s = os.popen(sacct % (yesterday, jobid), 'r').read()
+      s = hide_usernames(os.popen(sacct % (yesterday, jobid), 'r').read())
       t = StringIO.StringIO(s)
       reader = csv.reader(t, delimiter='|')
       headers = map(convert, reader.next())
@@ -175,10 +211,11 @@ def returnjobinfo(jobid):
 
 @route('/data/jobhist/<user>')
 def returnjobhist(user):
+    user = reverse_hidden_user(user)
     t0 = time.time()
     yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
     sacct = "sacct -S %s -X --format=jobid,jobname,user,account,state,elapsed,start,end,nnodes,ncpus,nodelist --parsable2 -u %s" % (yesterday, quote(user))
-    s = os.popen(sacct, 'r').read()
+    s = hide_usernames(os.popen(sacct, 'r').read())
     t = StringIO.StringIO(s)
     reader = csv.reader(t, delimiter='|')
     headers = map(convert, reader.next())
