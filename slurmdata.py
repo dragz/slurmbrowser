@@ -48,10 +48,9 @@ if GANGLIA:
 # This section of code is only used when producing screencasts
 # all it does is hide the real usernames 
 #
-OBFUSCATE_USERNAMES=0
+OBFUSCATED_USERNAMES=0
 
 def obfuscated_usernames():
-    """hide usernames when producing images or videos"""
     usernames = os.popen("squeue -h -o %u","r").readlines()
     uu = set(map(str.strip, usernames))
     a = ord('a')
@@ -61,6 +60,7 @@ def obfuscated_usernames():
     return usermap
 
 def hide_usernames(t):
+    """hide usernames when producing images or videos"""
     global OBFUSCATED_USERNAMES
     if OBFUSCATED_USERNAMES:
         um = obfuscated_usernames()
@@ -69,6 +69,7 @@ def hide_usernames(t):
     return t
 
 def reverse_hidden_user(user):
+    """reverse lookup hidden usernames when producing images or videos"""
     global OBFUSCATED_USERNAMES
     if OBFUSCATED_USERNAMES:
         usermap = obfuscated_usernames()
