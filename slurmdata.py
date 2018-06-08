@@ -97,14 +97,15 @@ def convert(a):
 def get_squeue_data():
     t0 = time.time()
     squeue = os.popen("squeue -o %all", 'r').read()
-    squeue = hide_usernames(squeue)
+    squeue = hide_usernames(squeue).replace("[","'[").replace("]","]'")
     queuedata = StringIO.StringIO(squeue)
     print "fetching quedata took ", time.time() - t0
-    reader = csv.reader(queuedata, delimiter='|')
+    reader = csv.reader(queuedata, delimiter='|', quotechar="'")
     headers = map(convert, reader.next())
     hl_idx = headers.index("NODELIST(REASON)")
     rows = list()
     for row in reader:
+        row[hl_idx] = row[hl_idx].replace("'","")
         rows.append(map(convert, row))
     print "total squeue", time.time() - t0
 
