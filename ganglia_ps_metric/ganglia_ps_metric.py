@@ -15,7 +15,7 @@ time.sleep(random_wait)
 print "Starting"
 
 pscmd = 'ps -eo pid,user,state,pcpu,cputime,etime,pmem,vsize,rssize,comm --sort -pcpu'
-gmetric = "/usr/bin/gmetric --name=%(NAME)s --type=string --dmax=300 --val=%(VAL)s"
+gmetric = "/usr/bin/gmetric --name=%(NAME)s --type=string --dmax=600 --val=%(VAL)s"
 
 while True:
     psout = os.popen(pscmd, 'r')
