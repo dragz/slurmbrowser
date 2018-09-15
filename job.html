@@ -1,17 +1,17 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-    <script src="https://code.jquery.com/jquery-1.12.3.js">
+    <script src="https://code.jquery.com/jquery-1.12.4.js">
     </script>
-    <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js">
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js">
+    <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js">
     </script>
     <script src="./utils.js">
     </script>
     <head>
-	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
 	<style>
 	 #rightalign td {
 	     text-align : right;
@@ -36,9 +36,9 @@
 			</table>
 		    </td>
 		    <td>
-			<table id="cpumapping" class="display" cellspacing="0" 
+			<table id="cpumapping" class="display" cellspacing="0"
 			       width="40%" align="left">
-			    <thead> 
+			    <thead>
 				<th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
 			    </thead>
 			    <tbody>
@@ -49,12 +49,16 @@
 	    </tbody>
 	</table>
 
+    <table id="avgjobstats" class="display nowrap" cellspacing="0"
+        width="100%">
+    </table>
+
 
 	<table id="jobprocs" class="display nowrap" cellspacing="0"
 	       width="100%">
 	</table>
 	<table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
-	
+
 <script>
 $(document).ready(function() {
 
@@ -68,7 +72,7 @@ function getDataAsync(url, callback) {
     });
 }
 
-//cutnpaste from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript 
+//cutnpaste from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
 var urlParams;
 (window.onpopstate = function () {
     var match,
@@ -81,6 +85,54 @@ var urlParams;
     while (match = search.exec(query))
        urlParams[decode(match[1])] = decode(match[2]);
 })();
+
+     var timespec_to_seconds = function(data) {
+	 var days=0, hours=0, minutes=0, seconds=0;
+	 var s;
+	 if (data.includes("-")) {
+             days = data.split("-")[0];
+             s = data.split("-")[1];
+	 }
+	 else {
+             s = data;
+	 }
+	 return days*24*3600 + s.split(':').reduce((acc,time) => (60 * acc) + +time);
+     };
+     $.fn.dataTable.ext.type.order['timespec-pre'] = function ( d ) {
+	 return timespec_to_seconds(d);
+     };
+
+     // copypasted from file-size sort plugin.
+     $.fn.dataTable.ext.type.order['mem-size-pre'] = function ( data ) {
+	 var matches = data.match( /^(\d+(?:\.\d+)?)([a-z]+)/i );
+	 var multipliers = {
+             b:  1,
+             bytes: 1,
+             kb: 1000,
+             kib: 1024,
+             k: 1024,
+             mb: 1000000,
+             mib: 1048576,
+             m: 1048576,
+             gb: 1000000000,
+             gib: 1073741824,
+             g: 1073741824,
+             tb: 1000000000000,
+             tib: 1099511627776,
+             t: 1099511627776,
+             pb: 1000000000000000,
+             pib: 1125899906842624,
+             p: 1125899906842624
+	 };
+
+	 if (matches) {
+             var multiplier = multipliers[matches[2].toLowerCase()];
+             return parseFloat( matches[1] ) * multiplier;
+	 } else {
+             return -1;
+	 };
+     };
+
 
 function expandHostlist(hostlist) {
    return hostlist.split(",");
@@ -127,6 +179,7 @@ function displayGraphs(jobinfo)
                  "infinibandpkt_report",
                  "lustre_report"];
 
+
    var cols = [];
    for (g in graphlist) {
        cols.push({ title : graphlist[g]});
@@ -143,19 +196,19 @@ function displayGraphs(jobinfo)
        }
        graphtable.push(row);
    }
-   
+
    $('#jobgraphs').DataTable({
          data : graphtable,
          columns : cols,
          stateSave : true,
          paging : false,
          info : false,
-         searching : false         
+         searching : false
    } );
 }
 
 function displayJobInfo(jobinfo) {
-    var jobInfoTable = [['JobId', 'JobName', 'UserId', 'Account', 'QOS', 
+    var jobInfoTable = [['JobId', 'JobName', 'UserId', 'Account', 'QOS',
                           'Partition', 'Shared' ],
                         ['SubmitTime', 'StartTime', 'EndTime', 'TimeLimit', 'RunTime'],
                         ['NumCPUs', 'NumNodes', 'MinMemoryCPU']];
@@ -166,7 +219,7 @@ function displayJobInfo(jobinfo) {
 	for (j in jobInfoTable[i]) {
 	    var elem = jobInfoTable[i][j];
 	    htmltable += "<tr><td id='rightalign'>" + elem +
-    "</td><td>=</td><td id='leftalign'>" + jobinfo[elem] + "</td></tr>"; 
+    "</td><td>=</td><td id='leftalign'>" + jobinfo[elem] + "</td></tr>";
         }
         htmltable += "</table></td>";
     }
@@ -187,7 +240,7 @@ function displayJobInfo(jobinfo) {
                       return data.toString().replace(/,c/g, " c").replace(/-/g,"&#8209;");
                       },
                targets : 0
-             } 
+             }
            ]
         } );
       }
@@ -217,20 +270,82 @@ function displayJobProcs(jobinfo)
        }
    }
 
-   var procTable = $('#jobprocs').DataTable({
+   // averages based on username and commandname
+   var avg_procstats = {};
+   for (var i in procinfo) {
+       var ps = procinfo[i];
+       var usercmd = ps["USER"]+ps["COMMAND"];
+       if ( ! ( usercmd in avg_procstats) ) {
+           avg_procstats[usercmd] = {"count": 0, "USER" : ps["USER"], "COMMAND" : ps["COMMAND"],
+                                     "%CPU": 0.0, "%MEM": 0.0, "VSZ": 0.0, "RSS" : 0.0, "TIME": 0, "ELAPSED": 0};
+       }
+       avg_procstats[usercmd]["count"] += 1;
+       avg_procstats[usercmd]["%CPU"] += ps["%CPU"]*1.0;
+       avg_procstats[usercmd]["%MEM"] += ps["%MEM"]*1.0;
+       avg_procstats[usercmd]["VSZ"] += ps["VSZ"]*1.0;
+       avg_procstats[usercmd]["RSS"] += ps["RSS"]*1.0;
+       avg_procstats[usercmd]["TIME"] = ps["TIME"];
+       avg_procstats[usercmd]["ELAPSED"] = ps["ELAPSED"];
+   }
+
+   for (var i in avg_procstats) {
+       var count = avg_procstats[i]["count"];
+       avg_procstats[i]["%CPU"] = (avg_procstats[i]["%CPU"]/count).toFixed(2);
+       avg_procstats[i]["%MEM"] = (avg_procstats[i]["%MEM"]/count).toFixed(2);
+       avg_procstats[i]["%VSZ"] = (avg_procstats[i]["%VSZ"]/count).toFixed(2);
+       avg_procstats[i]["%RSS"] = (avg_procstats[i]["%RSS"]/count).toFixed(2);
+   }
+
+   var avgprocTable = $('#avgjobstats').DataTable({
+         processing : true,
+         data : _.values(avg_procstats),
+         columns : [
+            { title: "Count", data: "count"},
+            { title: "User", data: "USER" },
+            { title: "%CPU", data: "%CPU" },
+            { title: "%mem", data: "%MEM" },
+            { title: "VM",   data: "VSZ" },
+            { title: "RSS",  data: "RSS" },
+            { title: "TIME", data: "TIME" },
+            { title: "ELAPSED", data: "ELAPSED" },
+            { title: "Command", data: "COMMAND" },
+          ],
+          columnDefs : [
+            {className: "dt-body-right", targets : [0,1,2,3,4,5,6,7]},
+            { type : "any-number",
+              targets : [2,3,4,5]},
+            { type : "mem-size",
+              targets : []},
+            { type : "timespec",
+              targets : [6,7]}
+            ],
+         order : [[ 2, "desc" ]] // sort by %cpu
+        } );
+
+
+    var procTable = $('#jobprocs').DataTable({
          processing : true,
          data : procinfo,
          columns : [
             { title: "Node", data: "hostname" },
-            { title: "User", data: "user" },
-            { title: "%CPU", data: "%cpu" },
-            { title: "%mem", data: "%mem" },
-            { title: "VM",   data: "vm" },
-            { title: "RSS",  data: "size" },
-            { title: "Data", data: "data" },
-            { title: "Command", data: "cmd" },
+            { title: "User", data: "USER" },
+            { title: "%CPU", data: "%CPU" },
+            { title: "%mem", data: "%MEM" },
+            { title: "VM",   data: "VSZ" },
+            { title: "RSS",  data: "RSS" },
+            { title: "TIME", data: "TIME" },
+            { title: "ELAPSED", data: "ELAPSED" },
+            { title: "Command", data: "COMMAND" },
           ],
-         order : [[ 3, "desc" ]] // sort by %cpu
+        columnDefs : [
+            { type : "mem-size",
+              targets : [3,4,5]},
+            { type : "any-number",
+              targets : []},
+            { type : "timespec",
+              targets : [6,7]}
+            ],
+        order : [[ 2, "desc" ]] // sort by %cpu
         } );
 }
 
