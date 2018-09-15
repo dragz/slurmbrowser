@@ -8,6 +8,10 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js">
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js">
+    </script>
+    <script src="./moment-duration-format.js">
+    </script>
     <script src="./utils.js">
     </script>
     <head>
@@ -284,18 +288,20 @@ function displayJobProcs(jobinfo)
        avg_procstats[usercmd]["%MEM"] += ps["%MEM"]*1.0;
        avg_procstats[usercmd]["VSZ"] += ps["VSZ"]*1.0;
        avg_procstats[usercmd]["RSS"] += ps["RSS"]*1.0;
-       avg_procstats[usercmd]["TIME"] = ps["TIME"];
-       avg_procstats[usercmd]["ELAPSED"] = ps["ELAPSED"];
+       avg_procstats[usercmd]["TIME"] += timespec_to_seconds(ps["TIME"]);
+       avg_procstats[usercmd]["ELAPSED"] += timespec_to_seconds(ps["ELAPSED"]);
    }
 
    for (var i in avg_procstats) {
        var count = avg_procstats[i]["count"];
        avg_procstats[i]["%CPU"] = (avg_procstats[i]["%CPU"]/count).toFixed(2);
        avg_procstats[i]["%MEM"] = (avg_procstats[i]["%MEM"]/count).toFixed(2);
-       avg_procstats[i]["%VSZ"] = (avg_procstats[i]["%VSZ"]/count).toFixed(2);
-       avg_procstats[i]["%RSS"] = (avg_procstats[i]["%RSS"]/count).toFixed(2);
+       avg_procstats[i]["VSZ"] = (avg_procstats[i]["VSZ"]/(count*1024)).toFixed(2);
+       avg_procstats[i]["RSS"] = (avg_procstats[i]["RSS"]/(count*1024)).toFixed(2);
+       avg_procstats[i]["TIME"] = moment.duration(avg_procstats[i]["TIME"]/count, "seconds").format("d-hh:mm:ss");
+       avg_procstats[i]["ELAPSED"] = moment.duration(avg_procstats[i]["ELAPSED"]/count, "seconds").format("d-hh:mm:ss");
    }
-
+ 
    var avgprocTable = $('#avgjobstats').DataTable({
          processing : true,
          data : _.values(avg_procstats),
@@ -304,8 +310,8 @@ function displayJobProcs(jobinfo)
             { title: "User", data: "USER" },
             { title: "%CPU", data: "%CPU" },
             { title: "%mem", data: "%MEM" },
-            { title: "VM",   data: "VSZ" },
-            { title: "RSS",  data: "RSS" },
+            { title: "VM(MB)",   data: "VSZ" },
+            { title: "RSS(MB)",  data: "RSS" },
             { title: "TIME", data: "TIME" },
             { title: "ELAPSED", data: "ELAPSED" },
             { title: "Command", data: "COMMAND" },
@@ -354,8 +360,8 @@ function renderPage(jobinfo)
      jobinfo = remap_jobinfo(jobinfo);
      displayJobInfo(jobinfo);
      if (jobinfo['GANGLIA'] === 1) {
-	 displayJobProcs(jobinfo);
-	 displayGraphs(jobinfo);
+    	 displayJobProcs(jobinfo);
+	     displayGraphs(jobinfo);
      }
 }
 
