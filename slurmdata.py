@@ -154,12 +154,21 @@ def returnnodeinfo():
 
 
 def get_procs(nodelist):
-    host = "stallo-adm.local"
-    port = 8649
-
+    import socket
+    host = "jump.cluster"
+    port = 8652
+    print nodelist
     #nodelist = map(lambda x: x+'.local', nodelist)
-    psinfo = Metrics(host=host, port=port, filter=Filter("ps-").startswith,
-                host_filter=Filter(hl=nodelist).hostlist)
+    psinfo = Metrics()
+    for node in nodelist:
+        host_filter = Filter(hl=[node]).hostlist
+        s = socket.create_connection((host,port))
+        s.sendall("/frontends/%s/\n" % node)         # beware, if the nodename isn't recognized gmetad will dump the whole database on you.
+        fileobject = s.makefile()
+
+        node_psinfo = Metrics(file=fileobject, filter=Filter("ps-").startswith,
+                        host_filter=host_filter) 
+        psinfo.update(node_psinfo)
     return psinfo.items()
 
 
@@ -170,6 +179,7 @@ def returnjobinfo(jobid):
     t0 = time.time()
     #print jobid
     s = hide_usernames(os.popen("scontrol show -d --oneliner job " + str(jobid)).read()).split()
+    print "slurm response took ", time.time() - t0
     if s:
       j = dict()
       for x in s:
@@ -191,7 +201,9 @@ def returnjobinfo(jobid):
       j['expanded_nodelist'] = map(str.strip, expand_hostlist(nodelist))
       if GANGLIA == 1 and GANGLIA_PROC == 1:
           print j['expanded_nodelist']
+          t_procs0 = time.time()
           j['procs'] = get_procs(j['expanded_nodelist'])
+          print "get procs took", time.time() - t_procs0
     else:
       #not an active job, fetch finished job stats
       #remark, these stats have a different format, leave it up to the client side
@@ -248,7 +260,7 @@ def fetchgraph():
     return graph
 
 if __name__ == "__main__":
-    run(host='localhost', port=8081, debug=True, reloader=True)
+    run(host='localhost', port=9081, debug=True, reloader=True)
 else:
     application = default_app()
 
