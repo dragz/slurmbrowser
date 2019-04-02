@@ -23,49 +23,118 @@
 	 #leftalign td {
 	     text-align : left;
 	 }
+     /* Style the tab */
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+
+/* Style the buttons that are used to open the tab content */
+.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+    background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+    background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
 	</style>
 
 	<title>
 	</title>
     </head>
     <body>
-	<p> <a href="squeue.html"> squeue </a> </p>
-	<p id="nodelist"> </p>
-	<p id="expand_nodelist"> </p>
-	<table>
-	    <tbody>
-		<tr>
-		    <td>
-			<table id="jobstats" class="display" cellspacing="10">
-			</table>
-		    </td>
-		    <td>
-			<table id="cpumapping" class="display" cellspacing="0"
-			       width="40%" align="left">
-			    <thead>
-				<th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
-			    </thead>
-			    <tbody>
-			    </tbody>
-			</table>
-		    </td>
-		</tr>
-	    </tbody>
-	</table>
+        <p> <a href="squeue.html"> squeue </a> </p>
+    	<p id="nodelist"> </p>
+	    <p id="expand_nodelist"> </p>
+    	<table>
+	        <tbody>
+                <tr>
+                    <td>
+                        <table id="jobstats" class="display" cellspacing="10">
+                        </table>
+                    </td>
+                    <td>
+                        <table id="cpumapping" class="display" cellspacing="0"
+                            width="40%" align="left">
+                            <thead>
+                                <th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+	        </tbody>
+	    </table>
 
-    <table id="avgjobstats" class="display nowrap" cellspacing="0"
-        width="100%">
-    </table>
-
-
-	<table id="jobprocs" class="display nowrap" cellspacing="0"
-	       width="100%">
-	</table>
-	<table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
-
+        <!-- Tab links -->
+        <div class="tab">
+            <button class="tablinks" onclick="openStat(event, 'aggregated')" id="defaulttab">Aggregated jobstats</button>
+            <button class="tablinks" onclick="openStat(event, 'detailed')">Detailed jobstats</button>
+        </div>
+  
+        <!-- Tab content -->
+        <div id="aggregated" class="tabcontent">
+            <table id="avgjobstats" class="display nowrap" cellspacing="0"
+                    width="100%">
+            </table>
+            <div id="aggregategraphs">
+            </div>
+        </div>
+  
+        <div id="detailed" class="tabcontent">
+  	        <table id="jobprocs" class="display nowrap" cellspacing="0"
+	                width="100%">
+            </table>
+	        <table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
+        </div>
+        <script>
+            function openStat(evt, statName) {
+                // Declare all variables
+                var i, tabcontent, tablinks;
+            
+                // Get all elements with class="tabcontent" and hide them
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+            
+                // Get all elements with class="tablinks" and remove the class "active"
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+            
+                // Show the current tab, and add an "active" class to the button that opened the tab
+                document.getElementById(statName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }   
+            // Get the element with id="defaultOpen" and click on it
+            document.getElementById("defaulttab").click();
+        </script>
 <script>
-$(document).ready(function() {
-
+    $(document).ready(function() {
 // cutnpaste from stackexchange
 function getDataAsync(url, callback) {
     $.ajax({
@@ -205,10 +274,29 @@ function displayGraphs(jobinfo)
          data : graphtable,
          columns : cols,
          stateSave : true,
-         paging : false,
+         paging : true,
          info : false,
-         searching : false
+         searching : false,
+         deferRender : true
    } );
+
+    var base_aggr_graph="<IMG SRC='../graph/?mreg=GRAPH_NAME&hl=HOSTLIST&start=STARTTIME&end=ENDTIME'>"
+                        .replace("HOSTLIST", hostlist.toString())
+                        .replace("STARTTIME", start)
+                        .replace("ENDTIME", end);
+    var aggr_graphlist = ["load_one", "cpu_user", "cpu_sys", "cpu_wio", "meminfo.used", "mem_total",
+                            "iconnect.kbin", "iconnect.kbout", "iconnect.pktin", "iconnect.pktout",
+                            "bytes_in", "bytes_out", "pkts_in", "pkts_out",
+                            "disktotals.readkbs", "disktotals.writekbs", "disktotals.reads", "disktotals.writes",
+                            "lusclt.readkbs", "lusclt.writekbs", "lusclt.reads", "lusclt.writes",
+                            "nfsinfo.Cread", "nfsinfo.Cwrite", "nfsinfo.Ccommit", "nfsinfo.Cmeta"
+                        ];
+    var graphs = "";
+    for (var i in aggr_graphlist) {
+        graphs += base_aggr_graph.replace("GRAPH_NAME", aggr_graphlist[i]);
+    }
+    document.getElementById('aggregategraphs').innerHTML = graphs;
+    
 }
 
 function displayJobInfo(jobinfo) {
@@ -366,6 +454,7 @@ function renderPage(jobinfo)
 }
 
 getDataAsync("../data/job/" + jobid, renderPage);
+
 });
 
 </script>

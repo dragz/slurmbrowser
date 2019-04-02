@@ -4,6 +4,7 @@ import csv
 import StringIO
 import time
 import datetime as dt
+import urllib
 import urllib2
 from urllib2 import urlopen
 from pipes import quote
@@ -97,15 +98,14 @@ def convert(a):
 def get_squeue_data():
     t0 = time.time()
     squeue = os.popen("squeue -o %all", 'r').read()
-    squeue = hide_usernames(squeue).replace("[","'[").replace("]","]'")
+    squeue = hide_usernames(squeue)
     queuedata = StringIO.StringIO(squeue)
     print "fetching quedata took ", time.time() - t0
-    reader = csv.reader(queuedata, delimiter='|', quotechar="'")
+    reader = csv.reader(queuedata, delimiter='|')
     headers = map(convert, reader.next())
     hl_idx = headers.index("NODELIST(REASON)")
     rows = list()
     for row in reader:
-        row[hl_idx] = row[hl_idx].replace("'","")
         rows.append(map(convert, row))
     print "total squeue", time.time() - t0
 
@@ -239,7 +239,6 @@ def returnjobhist(user):
     print "jobhist", time.time() - t0
     return dict(headers=headers, jobs=jobs)
 
-
 #
 # Proxy requests for graphs to backend so we do not have to expose it
 #
@@ -247,17 +246,23 @@ def returnjobhist(user):
 def fetchgraph():
     global graphurl
     try:
-      hostgraphurl = (graphurl.replace('GRAPH_NAME', request.query.name)
-                           .replace('HOSTNAME',   request.query.hostname)
+        hostgraphurl = (graphurl.replace('GRAPH_NAME', request.query.name)
                            .replace('STARTTIME',  request.query.start)
                            .replace('ENDTIME',    request.query.end)
                   )
-      #print hostgraphurl
-      graph = urlopen(hostgraphurl)
-      response.set_header('Content-type', 'image/png')
+        if request.query.hostname:
+            hostgraphurl = hostgraphurl.replace('HOSTNAME', request.query.hostname)
+        if request.query.hl:
+            hostgraphurl += "&glegend=hide&gtype=line&z=large&line_width=0"
+            hostgraphurl += "&aggregate=1&hreg[]=" + urllib.quote("|".join([ h + "\\b" for h in request.query.hl.split(',')]))
+            hostgraphurl += "&mreg[]=^" + request.query.mreg
+            hostgraphurl += "&title=" + request.query.mreg
+        print hostgraphurl
+        graph = urlopen(hostgraphurl)
+        response.set_header('Content-type', 'image/png')
     except Exception as e:
-      print e
-      graph = None
+        print e
+        graph = None
     return graph
 
 if __name__ == "__main__":
