@@ -31,20 +31,20 @@ class ClassDict(dict):
     def __setattr__(self, key, val):
         self[key] = val
     def __getattr__(self, key):
-        if self.has_key(key):
+        if key in self:
             return self[key]
         else:
             return None
 
 class Metrics(dict):
-    def __init__(self, host=None, port=None, file=None, filter=None, host_filter=None):
+    def __init__(self, host=None, port=None, infile=None, filter=None, host_filter=None):
         fileobject = None
         if host and port:
             import socket
             s = socket.create_connection((host,port))
             fileobject = s.makefile()
-        elif file:
-            fileobject = file
+        elif infile:
+            fileobject = infile
         
         if fileobject:
             self.getmetrics(fileobject, filter, host_filter=host_filter)
@@ -57,14 +57,14 @@ class Metrics(dict):
         events = ("start", )
         context = etree.iterparse(fileobject, events=events)
         for a, ele in context:
-            #print a,  ele.attrib, ele.tag
+            #print(a,  ele.attrib, ele.tag)
             tag = ele.tag
             if tag == 'HOST':
                 hostname = host_filter(ele.attrib['NAME'])
                 if hostname:
                     self[hostname] = ClassDict()
             elif hostname and tag == 'METRIC' and\
-                (not filter or filter(ele.attrib['NAME'])):
+                (not filter or list(filter(ele.attrib['NAME']))):
                 aname = ele.attrib['NAME']
                 if ele.attrib['TYPE'] == "string" and aname.startswith('ps-'):
                     items = processinfo(ele.attrib['VAL'])
@@ -129,12 +129,12 @@ def main():
             return 1
         else:
             return 0
-    ok = sum(map(is_ok, m.values()))
-    notok = len(m.values())-ok
-    print "reported %s hosts, missing %s hosts\n"%(ok, notok)
-    for h, met in m.items():
+    ok = sum(map(is_ok, list(m.values())))
+    notok = len(list(m.values()))-ok
+    print("reported %s hosts, missing %s hosts\n"%(ok, notok))
+    for h, met in list(m.items()):
         if not met:
-            print h
+            print(h)
     
 if __name__ == "__main__":
     main()
