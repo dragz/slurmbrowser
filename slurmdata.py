@@ -165,7 +165,7 @@ def get_procs(nodelist):
         host_filter = Filter(hl=[node]).hostlist
         s = socket.create_connection((host,port))
         s.sendall(("/frontends/%s/\n" % node).encode('utf-8'))         # beware, if the nodename isn't recognized gmetad will dump the whole database on you.
-        fileobject = s.makefile('b', encoding='utf-8')
+        fileobject = s.makefile('b',encoding='utf-8')
         node_psinfo = Metrics(infile=fileobject, filter=Filter("ps-").startswith,
                         host_filter=host_filter) 
         print(node_psinfo)

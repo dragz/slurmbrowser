@@ -64,7 +64,7 @@ class Metrics(dict):
                 if hostname:
                     self[hostname] = ClassDict()
             elif hostname and tag == 'METRIC' and\
-                (not filter or list(filter(ele.attrib['NAME']))):
+                (not filter or filter(ele.attrib['NAME'])):
                 aname = ele.attrib['NAME']
                 if ele.attrib['TYPE'] == "string" and aname.startswith('ps-'):
                     items = processinfo(ele.attrib['VAL'])
