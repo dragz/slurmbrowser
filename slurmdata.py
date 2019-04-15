@@ -97,7 +97,9 @@ def convert(a):
 
 def get_squeue_data():
     t0 = time.time()
-    squeue = os.popen("squeue -o %all", 'r').read()
+    p = os.popen("squeue -o %all", 'r')
+    squeue = p.read()
+    p.close()
     squeue = hide_usernames(squeue)
     queuedata = io.StringIO(squeue)
     print("fetching quedata took ", time.time() - t0)
@@ -137,7 +139,9 @@ def returnsinfo():
 @route('/data/nodeinfo')
 def returnnodeinfo():
     t0 = time.time()
-    s = os.popen("scontrol show -d --oneliner node", 'r').readlines()
+    p = os.popen("scontrol show -d --oneliner node", 'r')
+    s = p.readlines()
+    p.close()
     nodeinfo = list()
     for l in s:
       nodedata = dict()
