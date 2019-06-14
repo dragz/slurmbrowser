@@ -142,6 +142,8 @@ def returnnodeinfo():
     for l in s:
       nodedata = dict()
       for e in l.strip().split():
+        if not '=' in e:
+            continue # just skip hard to parse tokens for now
         k, v = e.split('=', 1)
         #down nodes need special treatment. The Reason= is the last field
         if k.startswith('Reason'):
