@@ -11,6 +11,7 @@ bootstrap:
 	wget https://craig.global.ssl.fastly.net/js/mousetrap/mousetrap.min.js
 
 install:
+	yum -y install httpd mod_wsgi mod_ssl python2-bottle python-lxml
 	cp slurmdata.py Metrics.py squeue.html nodeinfo.html job.html jobhist.html hostlist.py /var/www/slurmbrowser/
 
 clean:
