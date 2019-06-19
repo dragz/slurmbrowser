@@ -11,7 +11,11 @@ bootstrap:
 	wget https://craig.global.ssl.fastly.net/js/mousetrap/mousetrap.min.js
 
 install:
-	yum -y install httpd mod_wsgi mod_ssl python2-bottle python-lxml
+	# you need epel for this
+	yum -y install httpd mod_wsgi python2-bottle python-lxml
+	# these are only needed if you want to encrypt and authenticate as local users
+	yum -y install mod_ssl mod_authnz_external pwauth  
+	mkdir -p /var/www/slurmbrowser
 	cp slurmdata.py Metrics.py squeue.html nodeinfo.html job.html jobhist.html hostlist.py /var/www/slurmbrowser/
 
 clean:
