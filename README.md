@@ -23,7 +23,13 @@ like this https://datatables.net/examples/api/row_details.html
 
 Add load graphs like the old torque jobbrowser. (done)
 
-More global info
+Tetris view of scheduling
+
+Backlog estimate
+
+Visible column selection
+
+Better global info on top of squeue
 
 ## IMPLEMENTATION NOTES
 
@@ -73,3 +79,4 @@ The client side is based on async fetching of json data from the
 server and all (or most) rendering of data is done by using the
 DataTables library. The client is responsible to interpret and display
 the data.
+
