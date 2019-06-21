@@ -16,8 +16,9 @@ install:
 	# these are only needed if you want to encrypt and authenticate as local users
 	yum -y install mod_ssl mod_authnz_external pwauth  
 	mkdir -p /var/www/slurmbrowser
-	cp slurmdata.py Metrics.py squeue.html nodeinfo.html job.html jobhist.html hostlist.py /var/www/slurmbrowser/
-
+	cp slurmdata.py Metrics.py squeue.html nodeinfo.html job.html jobhist.html hostlist.py utils.js default.gif slurmbrowser.cfg /var/www/slurmbrowser/
+	cp slurmbrowser.conf /etc/httpd/conf.d/
+	
 clean:
 	rm -f *~ *.tar.gz* *.pyc
 
