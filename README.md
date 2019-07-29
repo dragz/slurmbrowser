@@ -31,6 +31,8 @@ Visible column selection
 
 Better global info on top of squeue
 
+Convert the web frontend to use Vue
+
 ## IMPLEMENTATION NOTES
 
 ### Server side
