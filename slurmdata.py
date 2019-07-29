@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import csv
 import io
 import time
@@ -143,16 +144,11 @@ def returnnodeinfo():
     s = p.readlines()
     p.close()
     nodeinfo = list()
+    # matches word=anything not containing word=
+    parsenodeinfo = re.compile(r'(\w+)=(.*?)(?:(?= +\w+?=)|$)')
+    conv = lambda t: (t[0], convert(t[1]))
     for l in s:
-      nodedata = dict()
-      for e in l.strip().split(None,1):
-        k, v = e.split('=', 1)
-        #down nodes need special treatment. The Reason= is the last field
-        if k.startswith('Reason'):
-          v = l[l.find('Reason=') + len('Reason='):].strip()
-          nodedata.update({k : convert(v)})
-          break
-        nodedata.update({k : convert(v)})
+      nodedata = dict(map(conv, parsenodeinfo.findall(l)))
       nodeinfo.append(nodedata)
     print("nodeinfo ", time.time() - t0)
     return {'nodeinfo' : nodeinfo}
