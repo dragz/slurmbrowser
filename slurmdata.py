@@ -9,7 +9,7 @@ import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 from urllib.request import urlopen
 from pipes import quote
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
@@ -20,7 +20,7 @@ from hostlist import expand_hostlist
 
 GANGLIA = 1
 GANGLIA_PROC = 1
-config = SafeConfigParser()
+config = ConfigParser()
 config.read('slurmbrowser.cfg')
 GANGLIA = int(config.get('MAIN', 'ganglia'))
 GANGLIA_PROC = int(config.get('MAIN', 'ganglia_proc'))
@@ -138,12 +138,17 @@ def returnsinfo():
     return get_sinfo_data()
 
 @route('/data/nodeinfo')
-def returnnodeinfo():
+def returnnodeinfo(nodelist=""):
     t0 = time.time()
-    p = os.popen("scontrol show -d --oneliner node", 'r')
+    cmd = "scontrol show -d --oneliner node " 
+    if nodelist:
+        cmd += quote(nodelist)
+    print(cmd)
+    p = os.popen(cmd, 'r')
     s = p.readlines()
     p.close()
     nodeinfo = list()
+    # regex101.com to the rescue
     # matches word=anything not containing word=
     parsenodeinfo = re.compile(r'(\w+)=(.*?)(?:(?= +\w+?=)|$)')
     conv = lambda t: (t[0], convert(t[1]))
@@ -200,24 +205,25 @@ def returnjobinfo(jobid):
           nodelist = n.replace("NodeList=", "")
       j['cpu_mapping'] = {'headers' : h, 'nodes' : cpu_mapping}
       j['expanded_nodelist'] = list(map(str.strip, expand_hostlist(nodelist)))
+      if 'Nodes' in j:
+        j['nodeinfo'] = returnnodeinfo(j['Nodes'])['nodeinfo']
       if GANGLIA == 1 and GANGLIA_PROC == 1:
-          print(j['expanded_nodelist'])
           t_procs0 = time.time()
           j['procs'] = get_procs(j['expanded_nodelist'])
           print("get procs took", time.time() - t_procs0)
     else:
-      #not an active job, fetch finished job stats
-      #remark, these stats have a different format, leave it up to the client side
-      #to fix it.
-      yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
-      sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,reqnodes,reqcpus,nodelist --parsable2 -S %s --job %s"
-      s = hide_usernames(os.popen(sacct % (yesterday, jobid), 'r').read())
-      t = io.StringIO(s)
-      reader = csv.reader(t, delimiter='|')
-      headers = list(map(convert, next(reader)))
-      jobinfo = list(map(convert, next(reader)))
-      j = dict(list(zip(headers, jobinfo)))
-      j['expanded_nodelist'] = list(map(str.strip, expand_hostlist(j["NodeList"])))
+        #not an active job, fetch finished job stats
+        #remark, these stats have a different format, leave it up to the client side
+        #to fix it.
+        yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
+        sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,reqnodes,reqcpus,nodelist --parsable2 -S %s --job %s"
+        s = hide_usernames(os.popen(sacct % (yesterday, jobid), 'r').read())
+        t = io.StringIO(s)
+        reader = csv.reader(t, delimiter='|')
+        headers = list(map(convert, next(reader)))
+        jobinfo = list(map(convert, next(reader)))
+        j = dict(list(zip(headers, jobinfo)))
+        j['expanded_nodelist'] = list(map(str.strip, expand_hostlist(j["NodeList"])))
     j['GANGLIA'] = GANGLIA
     #print j
     print("jobinfo", time.time() - t0)
