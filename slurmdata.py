@@ -1,26 +1,38 @@
-from hostlist import expand_hostlist
-from bottle import route, run, static_file, request, response, default_app
-import os
-import sys
-import re
-import csv
-import io
-import time
-import datetime as dt
-import urllib.request
-import urllib.parse
-import urllib.error
-import urllib.request
-import urllib.error
-import urllib.parse
-from urllib.request import urlopen
-from pipes import quote
-from configparser import ConfigParser
+from __future__ import print_function
+from __future__ import absolute_import, division
+# This should run both in python 2 and 3.
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
     os.chdir(os.path.dirname(__file__))
+from hostlist import expand_hostlist
+
+import sys
+import os
+import re
+import csv
+import io
+import time
+import datetime as dt
+from pipes import quote
+from bottle import route, run, static_file, request, response, default_app
+if sys.version_info[0] == 2:
+    import urllib
+    import urllib2
+    from urllib2 import urlopen
+    from ConfigParser import SafeConfigParser as ConfigParser
+else:
+    import urllib.request
+    import urllib.parse
+    import urllib.error
+    import urllib.request
+    import urllib.error
+    import urllib.parse
+    from urllib.request import urlopen
+    from configparser import ConfigParser
+
+
 
 GANGLIA = 1
 GANGLIA_PROC = 1
@@ -36,11 +48,18 @@ if GANGLIA:
     passwd = config.get('Ganglia', 'passwd')
 
     if user:
-        auth_handler = urllib.request.HTTPBasicAuthHandler()
-        auth_handler.add_password(realm="Ganglia web UI", uri=serverurl,
-                                  user=user, passwd=passwd)
-        opener = urllib.request.build_opener(auth_handler)
-        urllib.request.install_opener(opener)
+        if sys.version_info[0] == 2:
+            auth_handler = urllib2.HTTPBasicAuthHandler()
+            auth_handler.add_password(realm="Ganglia web UI", uri=serverurl,
+                                      user=user, passwd=passwd)
+            opener = urllib2.build_opener(auth_handler)
+            urllib2.install_opener(opener)
+        else:
+            auth_handler = urllib.request.HTTPBasicAuthHandler()
+            auth_handler.add_password(realm="Ganglia web UI", uri=serverurl,
+                                      user=user, passwd=passwd)
+            opener = urllib.request.build_opener(auth_handler)
+            urllib.request.install_opener(opener)
 
     try:
         from Metrics import Metrics, Filter
@@ -107,15 +126,23 @@ def convert(a):
         return b
 
 
+def run_slurmcommand(cmd):
+    p = os.popen(cmd, 'r')
+    if sys.version_info[0] == 2:
+        output = unicode(p.read())
+    else:
+        output = p.read()
+    p.close()
+    return output
+
+
 def get_squeue_data():
     t0 = time.time()
-    p = os.popen("squeue -o %all", 'r')
-    squeue = p.read()
-    p.close()
+    squeue = run_slurmcommand("squeue -o %all")
     squeue = hide_usernames(squeue)
     queuedata = io.StringIO(squeue)
     print("fetching quedata took ", time.time() - t0)
-    reader = csv.reader(queuedata, delimiter='|')
+    reader = csv.reader(queuedata, delimiter=str('|'))
     headers = list(map(convert, next(reader)))
     hl_idx = headers.index("NODELIST(REASON)")
     rows = list()
@@ -133,7 +160,7 @@ def returnsqueue():
 
 def get_sinfo_data():
     t0 = time.time()
-    queuedata = io.StringIO(os.popen("sinfo -o %all", 'r').read())
+    queuedata = io.StringIO(run_slurmcommand("sinfo -o %all"))
     reader = csv.reader(queuedata, delimiter='|')
     nodelist = set()
     headers = list(map(convert, next(reader)))
@@ -186,7 +213,10 @@ def get_procs(nodelist):
         s = socket.create_connection((host, port))
         # beware, if the nodename isn't recognized gmetad will dump the whole database on you.
         s.sendall(("/frontends/%s/\n" % node).encode('utf-8'))
-        fileobject = s.makefile('b', encoding='utf-8')
+        if sys.version_info[0] == 2:
+            fileobject = s.makefile('b')
+        else:
+            fileobject = s.makefile('b', encoding='utf-8')
         node_psinfo = Metrics(infile=fileobject, filter=Filter("ps-").startswith,
                               host_filter=host_filter)
         print(node_psinfo)
@@ -209,25 +239,26 @@ def returnjobinfo(jobid):
             if len(y) == 2:
                 j[y[0]] = y[1]
 
-        cpu_mapping = list()
-        h = ['Nodes', 'CPU_IDs', 'Mem']
-        nodelist = ""
-        for i, n in enumerate(s):
-            if n.startswith("Nodes="):
-                cpu_mapping.append([s[i].replace('Nodes=', ''),
-                                    s[i+1].replace('CPU_IDs=', ''),
-                                    s[i+2].replace('Mem=', '')])
-            if n.startswith("NodeList="):
-                nodelist = n.replace("NodeList=", "")
-        j['cpu_mapping'] = {'headers': h, 'nodes': cpu_mapping}
-        j['expanded_nodelist'] = list(
-            map(str.strip, expand_hostlist(nodelist)))
-        if 'Nodes' in j:
-            j['nodeinfo'] = returnnodeinfo(j['Nodes'])['nodeinfo']
-        if GANGLIA == 1 and GANGLIA_PROC == 1:
-            t_procs0 = time.time()
-            j['procs'] = get_procs(j['expanded_nodelist'])
-            print("get procs took", time.time() - t_procs0)
+        if not j['JobState'] == 'PENDING':
+            cpu_mapping = list()
+            h = ['Nodes', 'CPU_IDs', 'Mem']
+            nodelist = ""
+            for i, n in enumerate(s):
+                if n.startswith("Nodes="):
+                    cpu_mapping.append([s[i].replace('Nodes=', ''),
+                                        s[i+1].replace('CPU_IDs=', ''),
+                                        s[i+2].replace('Mem=', '')])
+                if n.startswith("NodeList="):
+                    nodelist = n.replace("NodeList=", "")
+            j['cpu_mapping'] = {'headers': h, 'nodes': cpu_mapping}
+            j['expanded_nodelist'] = list(
+                map(str.strip, expand_hostlist(nodelist)))
+            if 'Nodes' in j:
+                j['nodeinfo'] = returnnodeinfo(j['Nodes'])['nodeinfo']
+            if GANGLIA == 1 and GANGLIA_PROC == 1:
+                t_procs0 = time.time()
+                j['procs'] = get_procs(j['expanded_nodelist'])
+                print("get procs took", time.time() - t_procs0)
     else:
             # not an active job, fetch finished job stats
             # remark, these stats have a different format, leave it up to the client side
@@ -235,7 +266,7 @@ def returnjobinfo(jobid):
         yesterday = (dt.datetime.today() -
                      dt.timedelta(1)).strftime("%Y-%m-%d")
         sacct = "sacct -X --format=jobid,jobname,user,account,state,elapsed,submit,start,end,nnodes,ncpus,reqnodes,reqcpus,nodelist --parsable2 -S %s --job %s"
-        s = hide_usernames(os.popen(sacct % (yesterday, jobid), 'r').read())
+        s = hide_usernames(run_slurmcommand(sacct % (yesterday, jobid)))
         t = io.StringIO(s)
         reader = csv.reader(t, delimiter='|')
         headers = list(map(convert, next(reader)))
@@ -256,7 +287,7 @@ def returnjobhist(user):
     yesterday = (dt.datetime.today() - dt.timedelta(1)).strftime("%Y-%m-%d")
     sacct = "sacct -S %s -X --format=jobid,jobname,user,account,state,elapsed,start,end,nnodes,ncpus,nodelist --parsable2 -u %s" % (
         yesterday, quote(user))
-    s = hide_usernames(os.popen(sacct, 'r').read())
+    s = hide_usernames(run_slurmcommand(sacct))
     t = io.StringIO(s)
     reader = csv.reader(t, delimiter='|')
     headers = list(map(convert, next(reader)))
