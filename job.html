@@ -78,8 +78,11 @@
 
         <v-tab title="Processes">
           <p v-if="!job.GANGLIA">Process info not available</p>
+          <p v-else-if="job.JobState === 'PENDING' || job.State">
+            No processes to show for job in {{ job.JobState || job.State }} state.
+          </p>
           <p v-else-if="!job.procs">
-            Ganglia process info coming here
+            Fetching ganglia job graphs...
           </p>
           <div v-else="">
             <input type="checkbox" v-model="fullprocinfo" /> Show all procs
@@ -115,6 +118,9 @@
 
         <v-tab title="Load graphs">
           <p v-if="!job.GANGLIA">Load graphs not available</p>
+          <p v-else-if="job.JobState === 'PENDING'">
+            No load graphs to show yet (pending job)
+          </p>
           <div v-else="">
             <table v-if="showloadgraphs">
               <thead>
