@@ -1,463 +1,440 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
-    <script src="https://code.jquery.com/jquery-1.12.4.js">
-    </script>
-    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js">
-    </script>
-    <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/moment-duration-format@2.3.2/lib/moment-duration-format.min.js">
-    </script>
-    <script src="./utils.js">
-    </script>
-    <head>
-	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
-	<style>
-	 #rightalign td {
-	     text-align : right;
-	 }
-	 #leftalign td {
-	     text-align : left;
-	 }
-     /* Style the tab */
-.tab {
-    overflow: hidden;
-    border: 1px solid #ccc;
-    background-color: #f1f1f1;
-}
-
-/* Style the buttons that are used to open the tab content */
-.tab button {
-    background-color: inherit;
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-}
-
-/* Change background color of buttons on hover */
-.tab button:hover {
-    background-color: #ddd;
-}
-
-/* Create an active/current tablink class */
-.tab button.active {
-    background-color: #ccc;
-}
-
-/* Style the tab content */
-.tabcontent {
-    display: none;
-    padding: 6px 12px;
-    border: 1px solid #ccc;
-    border-top: none;
-}
-	</style>
-
-	<title>
-	</title>
-    </head>
-    <body>
-        <p> <a href="squeue.html"> squeue </a> </p>
-    	<p id="nodelist"> </p>
-	    <p id="expand_nodelist"> </p>
-    	<table>
-	        <tbody>
-                <tr>
-                    <td>
-                        <table id="jobstats" class="display" cellspacing="10">
-                        </table>
-                    </td>
-                    <td>
-                        <table id="cpumapping" class="display" cellspacing="0"
-                            width="40%" align="left">
-                            <thead>
-                                <th>Nodes</th><th>CPU_IDs</th><th>Mem</th>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-                    </td>
-                </tr>
-	        </tbody>
-	    </table>
-
-        <!-- Tab links -->
-        <div class="tab">
-            <button class="tablinks" onclick="openStat(event, 'aggregated')" id="defaulttab">Aggregated jobstats</button>
-            <button class="tablinks" onclick="openStat(event, 'detailed')">Detailed jobstats</button>
-        </div>
-  
-        <!-- Tab content -->
-        <div id="aggregated" class="tabcontent">
-            <table id="avgjobstats" class="display nowrap" cellspacing="0"
-                    width="100%">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Job info</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- <link rel="stylesheet" type="text/css" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css" />  -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/themes/vue-tabs.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-router/dist/vue-router.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/dist/vue-tabs.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.16.2/dist/axios.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-duration-format@2.3.2/lib/moment-duration-format.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+  </head>
+  <body>
+    <p>
+      <strong>
+        <a href="./squeue.html">SQUEUE</a>
+        <a href="./nodeinfo.html">NODEINFO</a>
+      </strong>
+    </p>
+    <div id="app">
+      <table>
+        <tr valign="top">
+          <td v-for="l in jobinfoitems">
+            <table>
+              <tr v-for="j in l" v-if="job[j]">
+                <td style="text-align:right">{{ j }}</td>
+                <td>=</td>
+                <td style="text-align:left; white-space:nowrap;">
+                  {{ job[j] }}
+                </td>
+              </tr>
             </table>
-            <div id="aggregategraphs">
+          </td>
+        </tr>
+      </table>
+
+      <p v-if="job.Nodes">Nodelist: {{ job.Nodes }}</p>
+      <p v-else-if="job.NodeList">Nodelist: {{ job.NodeList }}</p>
+
+      <vue-tabs @tab-change="handleTabChange" type="tabs">
+        <v-tab title="Nodeinfo">
+          <table v-if="job.nodeinfo">
+            <thead>
+              <td v-for="h in nodeinfoitems">
+                {{ h }}
+              </td>
+            </thead>
+            <tr v-for="node in job.nodeinfo">
+              <td
+                v-for="i in nodeinfoitems"
+                style="text-align:left; white-space:nowrap;"
+              >
+                {{ node[i] }}
+              </td>
+            </tr>
+          </table>
+
+          <template v-else="">
+            <p>No nodeinfo available</p>
+          </template>
+        </v-tab>
+
+        <v-tab title="Processes">
+          <p v-if="!job.GANGLIA">Process info not available</p>
+          <p v-else-if="!job.procs">
+            Ganglia process info coming here
+          </p>
+          <div v-else="">
+            <input type="checkbox" v-model="fullprocinfo" /> Show all procs
+            <input type="checkbox" v-model="showsysprocs" /> Show system procs
+            <div v-show="fullprocinfo">
+              <h2>Detailed process info</h2>
+              <table id="processtable">
+                <thead>
+                  <th
+                    v-for="h in ['NODE','USER', '%CPU', '%MEM', 'TIME', 'ELAPSED', 'VSZ', 'RSS', 'COMMAND']"
+                  >
+                    {{ h }}
+                  </th>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
-        </div>
-  
-        <div id="detailed" class="tabcontent">
-  	        <table id="jobprocs" class="display nowrap" cellspacing="0"
-	                width="100%">
+            <div v-show="!fullprocinfo">
+              <h2>Average proc utilization and resources</h2>
+              <table id="aggregatedprocesstable">
+                <thead>
+                  <th
+                    v-for="h in ['Count','USER', '%CPU', '%MEM', 'TIME', 'ELAPSED', 'VSZ', 'RSS', 'COMMAND']"
+                  >
+                    {{ h }}
+                  </th>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </v-tab>
+
+        <v-tab title="Load graphs">
+          <p v-if="!job.GANGLIA">Load graphs not available</p>
+          <div v-else="">
+            <table v-if="showloadgraphs">
+              <thead>
+                <tr>
+                  <td v-for="h in loadgraphs">
+                    {{ h }}
+                  </td>
+                </tr>
+              </thead>
+              <tr v-for="node in job.expanded_nodelist">
+                <td
+                  v-for="graphname in loadgraphs"
+                  v-html="graph( graphname, node, job.Start || job.StartTime, job.End || job.EndTime )"
+                ></td>
+              </tr>
             </table>
-	        <table id="jobgraphs" class="display nowrap" cellspacing="0" width="100%"></table>
-        </div>
-        <script>
-            function openStat(evt, statName) {
-                // Declare all variables
-                var i, tabcontent, tablinks;
-            
-                // Get all elements with class="tabcontent" and hide them
-                tabcontent = document.getElementsByClassName("tabcontent");
-                for (i = 0; i < tabcontent.length; i++) {
-                    tabcontent[i].style.display = "none";
-                }
-            
-                // Get all elements with class="tablinks" and remove the class "active"
-                tablinks = document.getElementsByClassName("tablinks");
-                for (i = 0; i < tablinks.length; i++) {
-                    tablinks[i].className = tablinks[i].className.replace(" active", "");
-                }
-            
-                // Show the current tab, and add an "active" class to the button that opened the tab
-                document.getElementById(statName).style.display = "block";
-                evt.currentTarget.className += " active";
-            }   
-            // Get the element with id="defaultOpen" and click on it
-            document.getElementById("defaulttab").click();
-        </script>
-<script>
-    $(document).ready(function() {
-// cutnpaste from stackexchange
-function getDataAsync(url, callback) {
-    $.ajax({
-        async: true,
-        url: url,
-        dataType: 'json',
-        success: callback
-    });
-}
 
-//cutnpaste from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
-var urlParams;
-(window.onpopstate = function () {
-    var match,
-        pl     = /\+/g,  // Regex for replacing addition symbol with aspace
-        search = /([^&=]+)=?([^&]*)/g,
-        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-        query  = window.location.search.substring(1);
+            <p v-else="">Ganglia process info here</p>
+          </div>
+        </v-tab>
+      </vue-tabs>
+    </div>
+    <script>
+      var router = new VueRouter({
+        mode: "history",
+        routes: []
+      });
 
-    urlParams = {};
-    while (match = search.exec(query))
-       urlParams[decode(match[1])] = decode(match[2]);
-})();
+      new Vue({
+        router,
+        el: "#app",
+        data: {
+          job: {},
+          jobinfoitems: [
+            [
+              "JobId",
+              "JobID", //inconsistent naming in slurm, its one or the other
+              "JobName",
+              "UserId",
+              "User", //same
+              "Account",
+              "QOS",
+              "Partition",
+              "Shared"
+            ],
+            [
+              "JobState",
+              "State",
+              "NumCPUs",
+              "NCPUS",
+              "NumNodes",
+              "NNodes",
+              "MinMemoryCPU"
+            ],
+            [
+              "SubmitTime",
+              "Submit",
+              "StartTime",
+              "Start",
+              "EndTime",
+              "End",
+              "TimeLimit",
+              "RunTime",
+              "Elapsed"
+            ]
+          ],
+          nodeinfoitems: [
+            "NodeName",
+            "CPUTot",
+            "CPULoad",
+            "AllocMem",
+            "FreeMem",
+            "State",
+            "Reason"
+          ],
+          loadgraphs: [
+            "load_report",
+            "cpu_report",
+            "mem_report",
+            "infiniband_report",
+            "infinibandpkt_report",
+            "lustre_report",
+            "packet_report",
+            "network_report"
+          ],
+          showloadgraphs: false,
+          processDataTable: null,
+          aggregatedProcessDataTable: null,
+          fullprocinfo: false,
+          showsysprocs: true // is toggled when table is filled with data to trigger the watcher
+        },
+        mounted() {
+          console.log("I am mounted!");
+          // get hold of the jobid from the url variable
+          var jobid = this.$route.query.jobid;
+          console.log("My jobid is", jobid);
+          //this.processDataTable = $('#processtable').DataTable({});
+          axios
+            .get("../data/job/" + jobid)
+            .then(response => (this.job = response.data))
+            .finally(() => this.fillProcessTable());
+        },
+        methods: {
+          handleTabChange(tabIndex, newTab, oldTab) {
+            if (tabIndex == 1) {
+              // Processes
+            } else if (tabIndex == 2) {
+              // Load graphs
+              this.showloadgraphs = true;
+            } else {
+            }
+          },
+          graph(name, node, start, end) {
+            const base_graph_url =
+              "<IMG SRC='../graph/?name=GRAPH_NAME&hostname=HOSTNAME&start=STARTTIME&end=ENDTIME'>";
+            const stime = new Date(start).getTime() / 1000;
+            const etime = Math.floor(
+              Math.min(
+                new Date(end).getTime() / 1000,
+                new Date().getTime() / 1000
+              )
+            );
 
-     var timespec_to_seconds = function(data) {
-	 var days=0, hours=0, minutes=0, seconds=0;
-	 var s;
-	 if (data.includes("-")) {
-             days = data.split("-")[0];
-             s = data.split("-")[1];
-	 }
-	 else {
-             s = data;
-	 }
-	 return days*24*3600 + s.split(':').reduce((acc,time) => (60 * acc) + +time);
-     };
-     $.fn.dataTable.ext.type.order['timespec-pre'] = function ( d ) {
-	 return timespec_to_seconds(d);
-     };
+            return base_graph_url
+              .replace("GRAPH_NAME", name)
+              .replace("HOSTNAME", node)
+              .replace("STARTTIME", stime)
+              .replace("ENDTIME", etime);
+          },
+          fillProcessTable() {
+            const procs = this.job.procs;
+            const procinfo = [];
+            const psheaders = [];
+            for (const i in procs) {
+              const hostname = procs[i][0];
+              const nodeps = procs[i][1];
+              for (const j in nodeps) {
+                const psinfo = nodeps[j]["val"];
+                psinfo["hostname"] = hostname;
+                procinfo.push(psinfo);
+              }
+            }
+            // averages based on username and commandname
+            var avg_procstats = {};
+            for (var i in procinfo) {
+              var ps = procinfo[i];
+              var usercmd = ps["USER"] + ps["COMMAND"];
+              if (!(usercmd in avg_procstats)) {
+                avg_procstats[usercmd] = {
+                  count: 0,
+                  USER: ps["USER"],
+                  COMMAND: ps["COMMAND"],
+                  "%CPU": 0.0,
+                  "%MEM": 0.0,
+                  VSZ: 0.0,
+                  RSS: 0.0,
+                  TIME: 0,
+                  ELAPSED: 0
+                };
+              }
+              avg_procstats[usercmd]["count"] += 1;
+              avg_procstats[usercmd]["%CPU"] += ps["%CPU"] * 1.0;
+              avg_procstats[usercmd]["%MEM"] += ps["%MEM"] * 1.0;
+              avg_procstats[usercmd]["VSZ"] += ps["VSZ"] * 1.0;
+              avg_procstats[usercmd]["RSS"] += ps["RSS"] * 1.0;
+              avg_procstats[usercmd]["TIME"] += timespec_to_seconds(ps["TIME"]);
+              avg_procstats[usercmd]["ELAPSED"] += timespec_to_seconds(
+                ps["ELAPSED"]
+              );
+            }
 
-     // copypasted from file-size sort plugin.
-     $.fn.dataTable.ext.type.order['mem-size-pre'] = function ( data ) {
-	 var matches = data.match( /^(\d+(?:\.\d+)?)([a-z]+)/i );
-	 var multipliers = {
-             b:  1,
-             bytes: 1,
-             kb: 1000,
-             kib: 1024,
-             k: 1024,
-             mb: 1000000,
-             mib: 1048576,
-             m: 1048576,
-             gb: 1000000000,
-             gib: 1073741824,
-             g: 1073741824,
-             tb: 1000000000000,
-             tib: 1099511627776,
-             t: 1099511627776,
-             pb: 1000000000000000,
-             pib: 1125899906842624,
-             p: 1125899906842624
-	 };
+            for (var i in avg_procstats) {
+              var count = avg_procstats[i]["count"];
+              avg_procstats[i]["%CPU"] = (
+                avg_procstats[i]["%CPU"] / count
+              ).toFixed(2);
+              avg_procstats[i]["%MEM"] = (
+                avg_procstats[i]["%MEM"] / count
+              ).toFixed(2);
+              avg_procstats[i]["VSZ"] = (
+                avg_procstats[i]["VSZ"] /
+                (count * 1024)
+              ).toFixed(2);
+              avg_procstats[i]["RSS"] = (
+                avg_procstats[i]["RSS"] /
+                (count * 1024)
+              ).toFixed(2);
+              avg_procstats[i]["TIME"] = moment
+                .duration(avg_procstats[i]["TIME"] / count, "seconds")
+                .format("d-hh:mm:ss");
+              avg_procstats[i]["ELAPSED"] = moment
+                .duration(avg_procstats[i]["ELAPSED"] / count, "seconds")
+                .format("d-hh:mm:ss");
+            }
 
-	 if (matches) {
-             var multiplier = multipliers[matches[2].toLowerCase()];
-             return parseFloat( matches[1] ) * multiplier;
-	 } else {
-             return -1;
-	 };
-     };
-
-
-function expandHostlist(hostlist) {
-   return hostlist.split(",");
-}
-
-var jobid = urlParams['jobid'];
-
-function remap_jobinfo(jobinfo)
-{
-  //A quick hack to map the format coming from sacct to
-  //the one coming from scontrol
-  if (jobinfo["JobID"]) {
-    jobinfo["JobId"] = jobinfo["JobID"];
-    jobinfo["StartTime"] = jobinfo["Start"];
-    jobinfo["EndTime"] = jobinfo["End"];
-    jobinfo["UserId"] = jobinfo["User"];
-    jobinfo["RunTime"] = jobinfo["Elapsed"];
-    jobinfo["NumNodes"] = jobinfo["NNodes"];
-    jobinfo["NumCPUs"] = jobinfo["NCPUS"];
-  }
-  return jobinfo;
-}
-
-function displayGraphs(jobinfo)
-{
-   //URGH timezone issue!!! How do one get the clients TZ?
-   //ganglias rrdtool seems to use UTC so we are off by one or two hours
-   var start = (new Date(jobinfo['StartTime'])).getTime()/1000 - 0*3600 ;
-   var end   = (new Date(jobinfo['EndTime'])).getTime()/1000 - 0*3600 ;
-   var now   = (new Date()).getTime()/1000 - 3600 ;
-   if (end > now) {
-      end = "now";
-   }
-   var hostlist = expand_nodelist(jobinfo['NodeList']);
-   var base_graph_url = "<IMG SRC='../graph/?name=GRAPH_NAME&hostname=HOSTNAME&start=STARTTIME&end=ENDTIME'>";
-
-   var graphlist = ["load_report",
-                 "cpu_report",
-                 "mem_report",
-                 "network_report",
-                 "packet_report",
-                 "nfs_report",
-                 "infiniband_report",
-                 "infinibandpkt_report",
-                 "lustre_report"];
-
-
-   var cols = [];
-   for (g in graphlist) {
-       cols.push({ title : graphlist[g]});
-   }
-   var graphtable = [];
-   for (h in hostlist) {
-       row = [];
-       for (g in graphlist) {
-          row.push(base_graph_url.replace("GRAPH_NAME", graphlist[g])
-                                 .replace("HOSTNAME", hostlist[h])
-                                 .replace("STARTTIME", start)
-                                 .replace("ENDTIME", end)
-          );
-       }
-       graphtable.push(row);
-   }
-
-   $('#jobgraphs').DataTable({
-         data : graphtable,
-         columns : cols,
-         stateSave : true,
-         paging : true,
-         info : false,
-         searching : false,
-         deferRender : true
-   } );
-
-    var base_aggr_graph="<IMG SRC='../graph/?mreg=GRAPH_NAME&hl=HOSTLIST&start=STARTTIME&end=ENDTIME'>"
-                        .replace("HOSTLIST", hostlist.toString())
-                        .replace("STARTTIME", start)
-                        .replace("ENDTIME", end);
-    var aggr_graphlist = ["load_one", "cpu_user", "cpu_sys", "cpu_wio", "meminfo.used", "mem_total",
-                            "iconnect.kbin", "iconnect.kbout", "iconnect.pktin", "iconnect.pktout",
-                            "bytes_in", "bytes_out", "pkts_in", "pkts_out",
-                            "disktotals.readkbs", "disktotals.writekbs", "disktotals.reads", "disktotals.writes",
-                            "lusclt.readkbs", "lusclt.writekbs", "lusclt.reads", "lusclt.writes",
-                            "nfsinfo.Cread", "nfsinfo.Cwrite", "nfsinfo.Ccommit", "nfsinfo.Cmeta"
-                        ];
-    var graphs = "";
-    for (var i in aggr_graphlist) {
-        graphs += base_aggr_graph.replace("GRAPH_NAME", aggr_graphlist[i]);
-    }
-    document.getElementById('aggregategraphs').innerHTML = graphs;
-    
-}
-
-function displayJobInfo(jobinfo) {
-    var jobInfoTable = [['JobId', 'JobName', 'UserId', 'Account', 'QOS',
-                          'Partition', 'Shared' ],
-                        ['SubmitTime', 'StartTime', 'EndTime', 'TimeLimit', 'RunTime'],
-                        ['NumCPUs', 'NumNodes', 'MinMemoryCPU']];
-    var htmltable = "<table><tr valign='top'>";
-    var i, j;
-    for (i in jobInfoTable) {
-        htmltable += "<td><table  id='jobinformation'>";
-	for (j in jobInfoTable[i]) {
-	    var elem = jobInfoTable[i][j];
-	    htmltable += "<tr><td id='rightalign'>" + elem +
-    "</td><td>=</td><td id='leftalign'>" + jobinfo[elem] + "</td></tr>";
+            this.processDataTable = $("#processtable").DataTable({
+              processing: true,
+              data: procinfo,
+              columns: [
+                { title: "Node", data: "hostname" },
+                { title: "User", data: "USER" },
+                { title: "%CPU", data: "%CPU" },
+                { title: "%mem", data: "%MEM" },
+                { title: "VM", data: "VSZ" },
+                { title: "RSS", data: "RSS" },
+                { title: "TIME", data: "TIME" },
+                { title: "ELAPSED", data: "ELAPSED" },
+                { title: "Command", data: "COMMAND" }
+              ],
+              columnDefs: [
+                { type: "mem-size", targets: [3, 4, 5] },
+                { type: "any-number", targets: [] },
+                { type: "timespec", targets: [6, 7] }
+              ],
+              order: [[2, "desc"]] // sort by %cpu
+            });
+            this.aggregatedProcessDataTable = $(
+              "#aggregatedprocesstable"
+            ).DataTable({
+              processing: true,
+              data: _.values(avg_procstats),
+              columns: [
+                { title: "Count", data: "count" },
+                { title: "User", data: "USER" },
+                { title: "%CPU", data: "%CPU" },
+                { title: "%mem", data: "%MEM" },
+                { title: "VM(MB)", data: "VSZ" },
+                { title: "RSS(MB)", data: "RSS" },
+                { title: "TIME", data: "TIME" },
+                { title: "ELAPSED", data: "ELAPSED" },
+                { title: "Command", data: "COMMAND" }
+              ],
+              columnDefs: [
+                {
+                  className: "dt-body-right",
+                  targets: [0, 1, 2, 3, 4, 5, 6, 7]
+                },
+                { type: "any-number", targets: [2, 3, 4, 5] },
+                { type: "mem-size", targets: [] },
+                { type: "timespec", targets: [6, 7] }
+              ],
+              order: [[2, "desc"]] // sort by %cpu
+            });
+            this.showsysprocs = false;
+          }
+        },
+        watch: {
+          showsysprocs() {
+            let sysusers = "^(?!root)(?!ganglia).*"; //regexp101.com to the rescue
+            if (this.showsysprocs) {
+              sysusers = ".";
+            }
+            this.processDataTable
+              .column(1)
+              .search(sysusers, true, false, false)
+              .draw();
+            this.aggregatedProcessDataTable
+              .column(1)
+              .search(sysusers, true, false, false)
+              .draw();
+            console.log("filter sysproc");
+          }
         }
-        htmltable += "</table></td>";
-    }
-    htmltable += "</tr></table>";
-    var nodelist = "<p>NodeList=" + jobinfo['NodeList'] + "</p>";
-    document.getElementById('jobstats').innerHTML = htmltable;
+      });
 
-    if (! jobinfo['JobID']) {
-      $('#cpumapping').DataTable({
-           data : jobinfo['cpu_mapping']['nodes'],
-           stateSave : true,
-           searching : false,
-           paging : false,
-           ordering : false,
-           info : false,
-           columnDefs : [
-             { render : function(data, type, row) {
-                      return data.toString().replace(/,c/g, " c").replace(/-/g,"&#8209;");
-                      },
-               targets : 0
-             }
-           ]
-        } );
+      // DataTables sort functions
+      function timespec_to_seconds(data) {
+        var days = 0,
+          hours = 0,
+          minutes = 0,
+          seconds = 0;
+        var s;
+        if (data.includes("-")) {
+          days = data.split("-")[0];
+          s = data.split("-")[1];
+        } else {
+          s = data;
+        }
+        return (
+          days * 24 * 3600 +
+          s.split(":").reduce((acc, time) => 60 * acc + +time)
+        );
       }
-    else {
-      document.getElementById('cpumapping').innerHTML = nodelist;
-    }
-}
+      $.fn.dataTable.ext.type.order["timespec-pre"] = function(d) {
+        return timespec_to_seconds(d);
+      };
 
-function displayJobProcs(jobinfo)
-{
-   if (! jobinfo['procs']) {
-      document.getElementById('jobprocs').innerHTML = "";
-      return;
-   }
+      $.fn.dataTable.ext.type.order["mem-size-pre"] = function(data) {
+        if (!data.hasOwnProperty("match")) {
+          //probably a number then
+          return data;
+        }
+        var matches = data.match(/^(\d+(?:\.\d+)?)([a-z]+)/i);
+        var multipliers = {
+          b: 1,
+          bytes: 1,
+          kb: 1000,
+          kib: 1024,
+          k: 1024,
+          mb: 1000000,
+          mib: 1048576,
+          m: 1048576,
+          gb: 1000000000,
+          gib: 1073741824,
+          g: 1073741824,
+          tb: 1000000000000,
+          tib: 1099511627776,
+          t: 1099511627776,
+          pb: 1000000000000000,
+          pib: 1125899906842624,
+          p: 1125899906842624
+        };
 
-   var procs = jobinfo['procs'];
-   var procinfo = [];
-
-   for (var i in procs) {
-       var hostname = procs[i][0];
-       var psdict = procs[i][1];
-       for (var j in psdict) {
-           var psinfo = psdict[j]["val"];
-           psinfo['hostname'] = hostname;
-           psinfo['ps'] = j;
-           procinfo.push(psinfo);
-       }
-   }
-
-   // averages based on username and commandname
-   var avg_procstats = {};
-   for (var i in procinfo) {
-       var ps = procinfo[i];
-       var usercmd = ps["USER"]+ps["COMMAND"];
-       if ( ! ( usercmd in avg_procstats) ) {
-           avg_procstats[usercmd] = {"count": 0, "USER" : ps["USER"], "COMMAND" : ps["COMMAND"],
-                                     "%CPU": 0.0, "%MEM": 0.0, "VSZ": 0.0, "RSS" : 0.0, "TIME": 0, "ELAPSED": 0};
-       }
-       avg_procstats[usercmd]["count"] += 1;
-       avg_procstats[usercmd]["%CPU"] += ps["%CPU"]*1.0;
-       avg_procstats[usercmd]["%MEM"] += ps["%MEM"]*1.0;
-       avg_procstats[usercmd]["VSZ"] += ps["VSZ"]*1.0;
-       avg_procstats[usercmd]["RSS"] += ps["RSS"]*1.0;
-       avg_procstats[usercmd]["TIME"] += timespec_to_seconds(ps["TIME"]);
-       avg_procstats[usercmd]["ELAPSED"] += timespec_to_seconds(ps["ELAPSED"]);
-   }
-
-   for (var i in avg_procstats) {
-       var count = avg_procstats[i]["count"];
-       avg_procstats[i]["%CPU"] = (avg_procstats[i]["%CPU"]/count).toFixed(2);
-       avg_procstats[i]["%MEM"] = (avg_procstats[i]["%MEM"]/count).toFixed(2);
-       avg_procstats[i]["VSZ"] = (avg_procstats[i]["VSZ"]/(count*1024)).toFixed(2);
-       avg_procstats[i]["RSS"] = (avg_procstats[i]["RSS"]/(count*1024)).toFixed(2);
-       avg_procstats[i]["TIME"] = moment.duration(avg_procstats[i]["TIME"]/count, "seconds").format("d-hh:mm:ss");
-       avg_procstats[i]["ELAPSED"] = moment.duration(avg_procstats[i]["ELAPSED"]/count, "seconds").format("d-hh:mm:ss");
-   }
- 
-   var avgprocTable = $('#avgjobstats').DataTable({
-         processing : true,
-         data : _.values(avg_procstats),
-         columns : [
-            { title: "Count", data: "count"},
-            { title: "User", data: "USER" },
-            { title: "%CPU", data: "%CPU" },
-            { title: "%mem", data: "%MEM" },
-            { title: "VM(MB)",   data: "VSZ" },
-            { title: "RSS(MB)",  data: "RSS" },
-            { title: "TIME", data: "TIME" },
-            { title: "ELAPSED", data: "ELAPSED" },
-            { title: "Command", data: "COMMAND" },
-          ],
-          columnDefs : [
-            {className: "dt-body-right", targets : [0,1,2,3,4,5,6,7]},
-            { type : "any-number",
-              targets : [2,3,4,5]},
-            { type : "mem-size",
-              targets : []},
-            { type : "timespec",
-              targets : [6,7]}
-            ],
-         order : [[ 2, "desc" ]] // sort by %cpu
-        } );
-
-
-    var procTable = $('#jobprocs').DataTable({
-         processing : true,
-         data : procinfo,
-         columns : [
-            { title: "Node", data: "hostname" },
-            { title: "User", data: "USER" },
-            { title: "%CPU", data: "%CPU" },
-            { title: "%mem", data: "%MEM" },
-            { title: "VM",   data: "VSZ" },
-            { title: "RSS",  data: "RSS" },
-            { title: "TIME", data: "TIME" },
-            { title: "ELAPSED", data: "ELAPSED" },
-            { title: "Command", data: "COMMAND" },
-          ],
-        columnDefs : [
-            { type : "mem-size",
-              targets : [3,4,5]},
-            { type : "any-number",
-              targets : []},
-            { type : "timespec",
-              targets : [6,7]}
-            ],
-        order : [[ 2, "desc" ]] // sort by %cpu
-        } );
-}
-
-function renderPage(jobinfo)
-{
-     jobinfo = remap_jobinfo(jobinfo);
-     displayJobInfo(jobinfo);
-     if (jobinfo['GANGLIA'] === 1) {
-    	 displayJobProcs(jobinfo);
-	     displayGraphs(jobinfo);
-     }
-}
-
-getDataAsync("../data/job/" + jobid, renderPage);
-
-});
-
-</script>
-
-</body>
+        if (matches) {
+          var multiplier = multipliers[matches[2].toLowerCase()];
+          return parseFloat(matches[1]) * multiplier;
+        } else {
+          return -1;
+        }
+      };
+    </script>
+  </body>
 </html>
