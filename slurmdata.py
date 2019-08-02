@@ -1,6 +1,10 @@
 from __future__ import print_function
 from __future__ import absolute_import, division
-# This should run both in python 2 and 3.
+# This code should run both in python 2 and 3.
+# Python 2 compatibility is needed for running under apache wsgi on CentOS7
+# Development is done in Python 3 with occasional backports as needed to move
+# into production. All backport code is wrapped in if sys.version_info[0] == 2:
+# blocks.
 
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
@@ -34,8 +38,8 @@ else:
 
 
 
-GANGLIA = 1
-GANGLIA_PROC = 1
+GANGLIA = 0
+GANGLIA_PROC = 0
 config = ConfigParser()
 config.read('slurmbrowser.cfg')
 GANGLIA = int(config.get('MAIN', 'ganglia'))
@@ -298,8 +302,9 @@ def returnjobhist(user):
     return dict(headers=headers, jobs=jobs)
 
 #
-# Proxy requests for graphs to backend so we do not have to expose it
-#
+# Proxy requests for graphs to ganglia backend so we do not have to expose it
+# It should in principle be possible to support any graphing backend that accept
+# hostname, graphname, start, end in urls to produce an image with a graph. 
 @route('/graph/')
 def fetchgraph():
     global graphurl
