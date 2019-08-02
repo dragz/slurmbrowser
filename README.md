@@ -2,19 +2,47 @@
 
 A really thin web layer above SLURM
 
+Current home is https://github.com/dragz/slurmbrowser/
+
 ## REQUIREMENTS
 
 bottle.py and access to the slurm commands scontrol, squeue and sacct.
 
+```
+yum -y install python-bottle
+```
+
 ## USE
 
+### Testing
+
+For a quick test run
+```
 python slurmdata.py
+```
 
 and point your browser to:
 
-  http://localhost:8080/html/squeue.html
+  http://localhost:9080/html/squeue.html
 
-It will listen on localhost:8080 in dev mode. Or, put it under the wings of apache. See slurmbrowser.conf for an example config. It needs mod_wsgi.
+It will listen on localhost:9080 in dev mode.
+
+### Production
+
+Put it under the wings of apache. See `apache_wsgi/` for example configs.
+
+`mod_wsgi` is needed
+```
+yum -y install mod_wsgi
+```
+
+## GANGLIA
+
+It is possible to fetch graphs from ganglia which gives a very nice interface
+for the user to check the status of their jobs both live and in retrospect. See
+`slurmbrowser.cfg` for hints on how to enable this (off by default as more work
+is needed on describing this integration).
+
 
 ## TODO
 
