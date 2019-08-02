@@ -9,7 +9,7 @@ Current home is https://github.com/dragz/slurmbrowser/
 bottle.py and access to the slurm commands scontrol, squeue and sacct.
 
 ```
-yum -y install python-bottle
+yum -y install python2-bottle
 ```
 
 ## USE
