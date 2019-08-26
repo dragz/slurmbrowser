@@ -18,6 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vue-router/dist/vue-router.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/dist/vue-tabs.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@0.16.2/dist/axios.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-axios@2.1.4/dist/vue-axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment-duration-format@2.3.2/lib/moment-duration-format.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
@@ -38,7 +39,7 @@
       <p id="totals"></p>
 
       <table
-        id="squeue"
+        id="squeueref"
         class="display nowrap"
         cellspacing="0"
         width="100%"
@@ -101,39 +102,44 @@
         },
         methods: {
           fetchSqueue() {
-            axios
-              .get("../data/squeue")
-              .then(response => (this.squeue = response.data))
-              .finally(() => this.updateSqueue());
+            return this.axios.get("../data/squeue");
           },
           fetchNodeinfo() {
-            axios
-              .get("../data/nodeinfo")
-              .then(response => (this.nodeinfo = response.data.nodeinfo))
-              .finally(() => this.updateNodeinfo());
+            return this.axios.get("../data/nodeinfo");
           },
           updateSqueue() {
-            if (!this.squeueTable) {
-              this.squeueTable = $("#squeue").DataTable({
-                data: this.squeue.jobs,
-                columns: colProps(this.visibleCols, this.squeue.headers),
-                order: [[this.visibleCols.indexOf["END_TIME"], "asc"]],
-                pageLength: 25,
-                lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
-                scrollX: true,
-                stateSave: true,
-                columnDefs: colDefs(this.visibleCols)
-              });
-            } else {
-              this.squeueTable.clear();
-              this.squeueTable.rows.add(this.squeue.jobs).draw();
-            }
+            this.squeueTable = $("#squeueref").DataTable({
+              data: this.squeue.jobs,
+              columns: colProps(this.visibleCols, this.squeue.headers),
+              ordering : true,
+              order: [[this.visibleCols.indexOf["END_TIME"], "asc"]],
+              pageLength: 25,
+              lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
+              scrollX: true,
+              stateSave: true,
+              columnDefs: colDefs(this.visibleCols)
+            });
+            // this.squeueTable.clear();
+            // this.squeueTable.rows.add(this.squeue.jobs).draw();
           },
           updateNodeinfo() {}
         },
         mounted() {
-          this.fetchSqueue();
-          this.fetchNodeinfo();
+          this.axios
+            .all([this.fetchSqueue(), this.fetchNodeinfo()])
+            .then(
+              this.axios.spread(
+                (s, n) => (
+                  (this.nodeinfo = n.data.nodeinfo),
+                  (this.squeue = s.data) // trigger the watcher
+                )
+              )
+            )
+            .finally(() => this.updateSqueue());
+        },
+        watch: {
+          // squeue : function () {this.updateSqueue()},
+          // nodeinfo : function () {}
         }
       });
 
