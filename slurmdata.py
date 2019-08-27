@@ -6,14 +6,14 @@ from __future__ import absolute_import, division
 # into production. All backport code is wrapped in if sys.version_info[0] == 2:
 # blocks.
 
+import sys
+import os
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
     os.chdir(os.path.dirname(__file__))
 from hostlist import expand_hostlist
 
-import sys
-import os
 import re
 import csv
 import io
