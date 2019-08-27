@@ -25,6 +25,7 @@
     <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mousetrap@1.6.3/mousetrap.min.js"></script>
     <script src="./utils.js"></script>
   </head>
   <body>
@@ -37,7 +38,9 @@
 
     <div id="app">
       <p id="totals"></p>
-
+      <button @click="filter_jobs('\\bR\\b')">Show running jobs(r)</button>
+      <button @click="filter_jobs('[^R]')">Show non running jobs(w)</button>
+      <button @click="filter_jobs('.')">Show all jobs(a)</button>
       <table
         id="squeueref"
         class="display nowrap"
@@ -59,6 +62,7 @@
         Keyboard shortcuts:<br />
         f-first page, n-next, p-previous, l-last, s-search. a-all jobs,
         r-running jobs, w-waiting jobs<br />
+        Sort by: c-CPUS, o-NODES, t-TIME_LEFT, i-START_TIME, m-MIN_MEMORY<br />
 
         Click on jobid to display loadgraphs for job. Click on username to see
         the users job history since yesterday midnight.
@@ -76,7 +80,7 @@
       </p>
     </div>
     <script>
-      new Vue({
+      const squeueVue = new Vue({
         el: "#app",
         data: {
           squeue: null,
@@ -111,8 +115,8 @@
             this.squeueTable = $("#squeueref").DataTable({
               data: this.squeue.jobs,
               columns: colProps(this.visibleCols, this.squeue.headers),
-              ordering : true,
-              order: [[this.visibleCols.indexOf["END_TIME"], "asc"]],
+              // ordering : true,
+              // order: [[this.visibleCols.indexOf["END_TIME"], "asc"]],
               pageLength: 25,
               lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
               scrollX: true,
@@ -121,8 +125,15 @@
             });
             // this.squeueTable.clear();
             // this.squeueTable.rows.add(this.squeue.jobs).draw();
+            keyboardShortcuts(this.squeueTable, this.visibleCols);
           },
-          updateNodeinfo() {}
+          updateNodeinfo() {},
+          filter_jobs(state) {
+            this.squeueTable
+              .column(this.visibleCols.indexOf("ST"))
+              .search(state, true)
+              .draw();
+          }
         },
         mounted() {
           this.axios
@@ -130,8 +141,7 @@
             .then(
               this.axios.spread(
                 (s, n) => (
-                  (this.nodeinfo = n.data.nodeinfo),
-                  (this.squeue = s.data) // trigger the watcher
+                  (this.nodeinfo = n.data.nodeinfo), (this.squeue = s.data)
                 )
               )
             )
@@ -156,6 +166,7 @@
         }
         return cols;
       }
+
       function colDefs(visibleCols) {
         return [
           {
@@ -193,6 +204,53 @@
             ]
           }
         ];
+      }
+
+      function keyboardShortcuts(table, headers) {
+        Mousetrap.bind("n", () => table.page("next").draw("page"));
+        Mousetrap.bind("p", () => table.page("previous").draw("page"));
+        Mousetrap.bind("f", () => table.page("first").draw("page"));
+        Mousetrap.bind("l", () => table.page("last").draw("page"));
+        Mousetrap.bind(
+          "s",
+          () => $("div.dataTables_filter input").focus(),
+          "keyup"
+        );
+
+        Mousetrap.bind("c", () =>
+          table.order([[headers.indexOf("CPUS"), "desc"]]).draw()
+        );
+        Mousetrap.bind("t", () =>
+          table.order([[headers.indexOf("TIME_LEFT"), "asc"]]).draw()
+        );
+        Mousetrap.bind("m", () =>
+          table.order([[headers.indexOf("MIN_MEMORY"), "desc"]]).draw()
+        );
+        Mousetrap.bind("o", () =>
+          table.order([[headers.indexOf("NODES"), "desc"]]).draw()
+        );
+        Mousetrap.bind("i", () =>
+          table.order([[headers.indexOf("START_TIME"), "asc"]]).draw()
+        );
+
+        Mousetrap.bind("r", () =>
+          table
+            .column(headers.indexOf("ST"))
+            .search("R")
+            .draw()
+        );
+        Mousetrap.bind("w", () =>
+          table
+            .column(headers.indexOf("ST"))
+            .search("[^R]", true)
+            .draw()
+        );
+        Mousetrap.bind("a", () =>
+          table
+            .column(headers.indexOf("ST"))
+            .search(".", true)
+            .draw()
+        );
       }
     </script>
   </body>
