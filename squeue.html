@@ -14,6 +14,15 @@
       type="text/css"
       href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.7.5/css/bulma.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/css/dataTables.bulma.min.css"
+    />
+
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-router/dist/vue-router.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/dist/vue-tabs.js"></script>
@@ -23,27 +32,35 @@
     <script src="https://cdn.jsdelivr.net/npm/moment-duration-format@2.3.2/lib/moment-duration-format.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/js/dataTables.bulma.min.js"></script>
     <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mousetrap@1.6.3/mousetrap.min.js"></script>
     <script src="./utils.js"></script>
   </head>
   <body>
-    <p>
-      <strong>
-        <a href="./squeue.html">SQUEUE</a>
-        <a href="./nodeinfo.html">NODEINFO</a>
-      </strong>
-    </p>
+    <nav class="navbar is-transparent">
+      <div class="navbar-brand">
+        <p class="navbar-item"><strong>SLURM web interface</strong></p>
+        <a class="navbar-item" href="./squeue.html">SQUEUE</a>
+        <a class="navbar-item" href="./nodeinfo.html">NODEINFO</a>
+      </div>
+    </nav>
 
     <div id="app">
       <p id="totals"></p>
-      <button @click="filter_jobs('\\bR\\b')">Show running jobs(r)</button>
-      <button @click="filter_jobs('[^R]')">Show non running jobs(w)</button>
-      <button @click="filter_jobs('.')">Show all jobs(a)</button>
+      <a class="button is-primary" @click="filter_jobs('\\bR\\b')"
+        >Show running jobs(r)</a
+      >
+      <a class="button is-primary" @click="filter_jobs('[^R]')"
+        >Show non running jobs(w)</a
+      >
+      <a class="button is-primary" @click="filter_jobs('.')"
+        >Show all jobs(a)</a
+      >
       <table
         id="squeueref"
-        class="display nowrap"
+        class="table display nowrap"
         cellspacing="0"
         width="100%"
         v-if="squeue"
@@ -58,7 +75,7 @@
         </tbody>
       </table>
       <p v-else=""><img src="default.gif" /></p>
-      <p>
+      <div class="box">
         Keyboard shortcuts:<br />
         f-first page, n-next, p-previous, l-last, s-search. a-all jobs,
         r-running jobs, w-waiting jobs<br />
@@ -66,18 +83,23 @@
 
         Click on jobid to display loadgraphs for job. Click on username to see
         the users job history since yesterday midnight.
-      </p>
+      </div>
 
-      <p>
-        Credits: Developed by
-        <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a> using
-        <a href="https://bottlepy.org">Bottle</a> for the server side and
-        <a href="https://vuejs.org">Vue</a>,
-        <a href="https://datatables.net/">Datatables</a>
-        and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
-        client side.<br />
-        Source: <a href="https://github.com/dragz/slurmbrowser/">On GitHub.</a>
-      </p>
+      <footer class="footer">
+        <div class="containar">
+          <div class="content has-text-centered">
+            Credits: Developed by
+            <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a> using
+            <a href="https://bottlepy.org">Bottle</a> for the server side and
+            <a href="https://vuejs.org">Vue</a>,
+            <a href="https://datatables.net/">Datatables</a>
+            and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
+            client side.<br />
+            Source:
+            <a href="https://github.com/dragz/slurmbrowser/">On GitHub.</a>
+          </div>
+        </div>
+      </footer>
     </div>
     <script>
       const squeueVue = new Vue({
