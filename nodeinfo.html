@@ -1,140 +1,195 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-  <script src="https://code.jquery.com/jquery-1.12.3.js">
-  </script>
-  <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
-  <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js">
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js">
-  </script>
-  <script src="./utils.js">
-  </script>
-<head>
-<link rel="stylesheet" type="text/css"
-      href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
-<title>
-</title>
-</head>
-<body>
-<p> <a href="squeue.html"> squeue </a> </p>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Nodeinfo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/themes/vue-tabs.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.7.5/css/bulma.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/css/dataTables.bulma.min.css"
+    />
 
-<p> The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally,
-  it should be close to 1.0 on all nodes.</p>
-<table id="nodeinfo" class="display" cellspacing="0" width="100%"></table>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-router/dist/vue-router.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/dist/vue-tabs.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.16.2/dist/axios.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-axios@2.1.4/dist/vue-axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-duration-format@2.3.2/lib/moment-duration-format.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/js/dataTables.bulma.min.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mousetrap@1.6.3/mousetrap.min.js"></script>
+    <script src="./utils.js"></script>
+  </head>
+  <body>
+    <nav class="navbar is-transparent">
+      <div class="navbar-brand">
+        <p class="navbar-item">
+          <strong class="is-size-3">SLURM web interface</strong>
+        </p>
+        <a class="navbar-item" href="./squeue.html">SQUEUE</a>
+        <a class="navbar-item" href="./nodeinfo.html">NODEINFO</a>
+      </div>
+    </nav>
 
-<script>
-// cutnpaste from stackexchange
-function getDataAsync(url, callback) {
-    $.ajax({
-        async: true,
-        url: url,
-        dataType: 'json',
-        success: callback
-    });
-}
-var nodeinfoData;
-var queueinfoData;
+    <p>
+      The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally, it
+      should be close to 1.0 on all nodes.
+    </p>
+    <table id="nodeinfo" class="table display" cellspacing="0" width="100%"></table>
 
-function renderTable(){
-    var visibleCols = ["NodeName", "CPUTot", "CPUAlloc", "CPULoad",
-    "RealMemory", "AllocMem", "FreeMem", "State"];
-    
-    var nodes = nodeinfoData['nodeinfo'];
+    <footer class="footer">
+      <div class="containar">
+        <div class="content has-text-centered">
+          Credits: Developed by
+          <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a> using
+          <a href="https://bottlepy.org">Bottle</a> for the server side and
+          <a href="https://vuejs.org">Vue</a>,
+          <a href="https://datatables.net/">Datatables</a>
+          and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
+          client side.<br />
+          Source and docs:
+          <a href="https://github.com/dragz/slurmbrowser/">On GitHub.</a>
+        </div>
+      </div>
+    </footer>
 
-    var headers = queueinfoData['headers'];
-    var jobs = queueinfoData['jobs'];
-    var nodelist_idx = headers.indexOf("NODELIST(REASON)");
-    var jobid_idx = headers.indexOf("JOBID");
-    var user_idx = headers.indexOf("USER");
-    var hostjobs = {};
-    for (var j in jobs) {
-       var job = jobs[j];
-       var hostlist = expand_nodelist(job[nodelist_idx]);
-       for (var h in hostlist) {
-          var hostname = hostlist[h];
-          if ( !(hostname in hostjobs)) {
-             hostjobs[hostname] = [];
-          }
-          hostjobs[hostname].push({'jobid' : job[jobid_idx], 'user' : job[user_idx]});
-       }
-    }
+    <script>
+      // cutnpaste from stackexchange
+      function getDataAsync(url, callback) {
+        $.ajax({
+          async: true,
+          url: url,
+          dataType: "json",
+          success: callback
+        });
+      }
+      var nodeinfoData;
+      var queueinfoData;
 
+      function renderTable() {
+        var visibleCols = [
+          "NodeName",
+          "CPUTot",
+          "CPUAlloc",
+          "CPULoad",
+          "RealMemory",
+          "AllocMem",
+          "FreeMem",
+          "State"
+        ];
 
-    for (var n in nodes) {
-       var hostinfo = nodes[n];
-       var cpualloc = hostinfo["CPUAlloc"];
-       var cpuload  = hostinfo["CPULoad"];
-       var loadperalloc;
-       if ( cpualloc >= 1 ) {
-          loadperalloc = (cpuload / cpualloc).toFixed(2);
-       }
-       else {
-          loadperalloc = "N/A";
-       }
-       hostinfo["LoadPerAlloc"] = loadperalloc;
-       if ( hostinfo["NodeName"] in hostjobs) {
-          hostinfo["JOBS"] = hostjobs[hostinfo["NodeName"]];
-       }
-       else {
-          hostinfo["JOBS"] = "";
-       }
-    }
+        var nodes = nodeinfoData["nodeinfo"];
 
-    var render_joblist = function (data, type, row) {
-       var jobdisp = [];
-       for (var d in data) {
-          var j = data[d];
-          jobdisp.push("<a href=job.html?jobid=" + j['jobid'] + ">" + j['jobid'] + "</a>:"+
-                       "<a href=jobhist.html?user="+ j['user'] + ">" + j['user'] + "</a>");
-       }
-       return jobdisp.join(",");
-    }
-    $('#nodeinfo').DataTable({
-          data : nodes,
-          columns : [
-            { data : "NodeName",   title : "NodeName" },
-            { data : "CPUTot",     title : "CPUTot" },
-            { data : "CPUAlloc",   title : "CPUAlloc" },
-            { data : "CPULoad",    title : "CPULoad", 
-                type: "any-number" },
-            { data : "LoadPerAlloc",    title : "LoadPerAlloc", 
-                type: "any-number" },
-            { data : "RealMemory", title : "RealMemory" },
-            { data : "AllocMem",   title : "AllocMem" },
-            { data : "FreeMem",    title : "FreeMem",
-                type: "any-number" },
-            { data : "State",      title : "State" },
-            { data : "JOBS",       title : "JOBS", 
-                      render : render_joblist
+        var headers = queueinfoData["headers"];
+        var jobs = queueinfoData["jobs"];
+        var nodelist_idx = headers.indexOf("NODELIST(REASON)");
+        var jobid_idx = headers.indexOf("JOBID");
+        var user_idx = headers.indexOf("USER");
+        var hostjobs = {};
+        for (var j in jobs) {
+          var job = jobs[j];
+          var hostlist = expand_nodelist(job[nodelist_idx]);
+          for (var h in hostlist) {
+            var hostname = hostlist[h];
+            if (!(hostname in hostjobs)) {
+              hostjobs[hostname] = [];
             }
+            hostjobs[hostname].push({
+              jobid: job[jobid_idx],
+              user: job[user_idx]
+            });
+          }
+        }
+
+        for (var n in nodes) {
+          var hostinfo = nodes[n];
+          var cpualloc = hostinfo["CPUAlloc"];
+          var cpuload = hostinfo["CPULoad"];
+          var loadperalloc;
+          if (cpualloc >= 1) {
+            loadperalloc = (cpuload / cpualloc).toFixed(2);
+          } else {
+            loadperalloc = "N/A";
+          }
+          hostinfo["LoadPerAlloc"] = loadperalloc;
+          if (hostinfo["NodeName"] in hostjobs) {
+            hostinfo["JOBS"] = hostjobs[hostinfo["NodeName"]];
+          } else {
+            hostinfo["JOBS"] = "";
+          }
+        }
+
+        var render_joblist = function(data, type, row) {
+          var jobdisp = [];
+          for (var d in data) {
+            var j = data[d];
+            jobdisp.push(
+              "<a href=job.html?jobid=" +
+                j["jobid"] +
+                ">" +
+                j["jobid"] +
+                "</a>:" +
+                "<a href=jobhist.html?user=" +
+                j["user"] +
+                ">" +
+                j["user"] +
+                "</a>"
+            );
+          }
+          return jobdisp.join(",");
+        };
+        $("#nodeinfo").DataTable({
+          data: nodes,
+          columns: [
+            { data: "NodeName", title: "NodeName" },
+            { data: "CPUTot", title: "CPUTot" },
+            { data: "CPUAlloc", title: "CPUAlloc" },
+            { data: "CPULoad", title: "CPULoad", type: "any-number" },
+            { data: "LoadPerAlloc", title: "LoadPerAlloc", type: "any-number" },
+            { data: "RealMemory", title: "RealMemory" },
+            { data: "AllocMem", title: "AllocMem" },
+            { data: "FreeMem", title: "FreeMem", type: "any-number" },
+            { data: "State", title: "State" },
+            { data: "JOBS", title: "JOBS", render: render_joblist }
           ],
-          order : [[ 1, "asc"]],
-          pageLength : 50, 
-          lengthMenu : [ [ 50, 100, -1], [ 50, 100, "All"] ],
-          stateSave : true
-    } );
-}
+          order: [[1, "asc"]],
+          pageLength: 50,
+          lengthMenu: [[50, 100, -1], [50, 100, "All"]],
+          stateSave: true
+        });
+      }
 
+      //Pull all node and job info from the server as json and render the htmltable
 
-//Pull all node and job info from the server as json and render the htmltable
+      var get_nodeinfo = $.getJSON("../data/nodeinfo", function(data) {
+        nodeinfoData = data;
+      });
 
-var get_nodeinfo = $.getJSON("../data/nodeinfo",
-                       function (data) {
-                         nodeinfoData = data;
-                       });
+      var get_queueinfo = $.getJSON("../data/squeue", function(data) {
+        queueinfoData = data;
+      });
 
-var get_queueinfo = $.getJSON("../data/squeue",
-                       function (data) {
-                         queueinfoData = data;
-                       });
-
-get_nodeinfo.done( function () {
-             get_queueinfo.done(renderTable);
-           });
-
-
-
-</script>
-
-</body>
+      get_nodeinfo.done(function() {
+        get_queueinfo.done(renderTable);
+      });
+    </script>
+  </body>
 </html>
