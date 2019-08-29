@@ -41,7 +41,9 @@
   <body>
     <nav class="navbar is-transparent">
       <div class="navbar-brand">
-        <p class="navbar-item"><strong>SLURM web interface</strong></p>
+        <p class="navbar-item">
+          <strong class="is-size-3">SLURM web interface</strong>
+        </p>
         <a class="navbar-item" href="./squeue.html">SQUEUE</a>
         <a class="navbar-item" href="./nodeinfo.html">NODEINFO</a>
       </div>
@@ -49,15 +51,19 @@
 
     <div id="app">
       <p id="totals"></p>
-      <a class="button is-primary" @click="filter_jobs('\\bR\\b')"
-        >Show running jobs(r)</a
-      >
-      <a class="button is-primary" @click="filter_jobs('[^R]')"
-        >Show non running jobs(w)</a
-      >
-      <a class="button is-primary" @click="filter_jobs('.')"
-        >Show all jobs(a)</a
-      >
+      <a class="button is-primary" @click="filter_jobs('\\bR\\b')">
+        Show running jobs(r)
+      </a>
+      <a class="button is-primary" @click="filter_jobs('[^R]')">
+        Show non running jobs(w)
+      </a>
+      <a class="button is-primary" @click="filter_jobs('.')">
+        Show all jobs(a)
+      </a>
+      <a class="button is-primary" @click="detailedInfo=!detailedInfo">
+        Show job details(d)
+      </a>
+      <hr />
       <table
         id="squeueref"
         class="table display nowrap"
@@ -66,11 +72,11 @@
         v-if="squeue"
       >
         <thead>
-          <td v-for="header in visibleCols">{{ header }}</td>
+          <td v-for="header in allCols">{{ header }}</td>
         </thead>
         <tbody>
           <tr>
-            <td v-for="header in visibleCols">Loading</td>
+            <td v-for="header in allCols">Loading</td>
           </tr>
         </tbody>
       </table>
@@ -95,7 +101,7 @@
             <a href="https://datatables.net/">Datatables</a>
             and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
             client side.<br />
-            Source:
+            Source and docs:
             <a href="https://github.com/dragz/slurmbrowser/">On GitHub.</a>
           </div>
         </div>
@@ -105,10 +111,11 @@
       const squeueVue = new Vue({
         el: "#app",
         data: {
+          detailedInfo: false,
           squeue: null,
           nodeinfo: null,
           squeueTable: null,
-          visibleCols: [
+          allCols: [
             "JOBID",
             "USER",
             "ACCOUNT",
@@ -124,6 +131,15 @@
             "START_TIME",
             "END_TIME",
             "NODELIST(REASON)"
+          ],
+          basicCols: [
+            "JOBID",
+            "USER",
+            "ST",
+            // "AvgNodeLoad",
+            "CPUS",
+            "TIME_LEFT",
+            "START_TIME"
           ]
         },
         methods: {
@@ -136,23 +152,23 @@
           updateSqueue() {
             this.squeueTable = $("#squeueref").DataTable({
               data: this.squeue.jobs,
-              columns: colProps(this.visibleCols, this.squeue.headers),
+              columns: colProps(this.allCols, this.squeue.headers),
               // ordering : true,
-              // order: [[this.visibleCols.indexOf["END_TIME"], "asc"]],
+              // order: [[this.allCols.indexOf["END_TIME"], "asc"]],
               pageLength: 25,
               lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
               scrollX: true,
               stateSave: true,
-              columnDefs: colDefs(this.visibleCols)
+              columnDefs: colDefs(this.allCols)
             });
             // this.squeueTable.clear();
             // this.squeueTable.rows.add(this.squeue.jobs).draw();
-            keyboardShortcuts(this.squeueTable, this.visibleCols);
+            keyboardShortcuts(this.squeueTable, this.allCols);
           },
           updateNodeinfo() {},
           filter_jobs(state) {
             this.squeueTable
-              .column(this.visibleCols.indexOf("ST"))
+              .column(this.allCols.indexOf("ST"))
               .search(state, true)
               .draw();
           }
@@ -170,6 +186,18 @@
             .finally(() => this.updateSqueue());
         },
         watch: {
+          detailedInfo: function() {
+            if (this.detailedInfo) {
+              this.squeueTable.columns().visible(true);
+            } else {
+              this.squeueTable.columns().visible(false);
+              const  visible = [];
+              for (const i in this.basicCols) {
+                visible.push(this.allCols.indexOf(this.basicCols[i]));
+              }
+              this.squeueTable.columns(visible).visible(true);
+            }
+          }
           // squeue : function () {this.updateSqueue()},
           // nodeinfo : function () {}
         }
@@ -189,23 +217,23 @@
         return cols;
       }
 
-      function colDefs(visibleCols) {
+      function colDefs(allCols) {
         return [
           {
             render: function(data, type, row) {
               return "<a href=job.html?jobid=" + data + ">" + data + "</a>";
             },
-            targets: visibleCols.indexOf("JOBID")
+            targets: allCols.indexOf("JOBID")
           },
           {
             render: function(data, type, row) {
               return "<a href=jobhist.html?user=" + data + ">" + data + "</a>";
             },
-            targets: visibleCols.indexOf("USER")
+            targets: allCols.indexOf("USER")
           },
           {
             type: "mem-size",
-            targets: visibleCols.indexOf("MIN_MEMORY")
+            targets: allCols.indexOf("MIN_MEMORY")
           },
           // {
           //   render: function(data, type, row) {
@@ -216,13 +244,13 @@
           //     return "<span style=color:" + c + ">" + data + "</span>";
           //   },
           //   type: "any-number",
-          //   targets: this.visibleCols.indexOf("AvgNodeLoad")
+          //   targets: this.allCols.indexOf("AvgNodeLoad")
           // },
           {
             type: "timespec",
             targets: [
-              visibleCols.indexOf("TIME_LEFT"),
-              visibleCols.indexOf("TIME_LIMIT")
+              allCols.indexOf("TIME_LEFT"),
+              allCols.indexOf("TIME_LIMIT")
             ]
           }
         ];
