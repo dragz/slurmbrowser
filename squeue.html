@@ -149,6 +149,18 @@
           fetchNodeinfo() {
             return this.axios.get("../data/nodeinfo");
           },
+          handleDetailChange () {
+            if (this.detailedInfo) {
+              this.squeueTable.columns().visible(true);
+            } else {
+              this.squeueTable.columns().visible(false);
+              const  visible = [];
+              for (const i in this.basicCols) {
+                visible.push(this.allCols.indexOf(this.basicCols[i]));
+              }
+              this.squeueTable.columns(visible).visible(true);
+            }
+          },
           updateSqueue() {
             this.squeueTable = $("#squeueref").DataTable({
               data: this.squeue.jobs,
@@ -161,6 +173,7 @@
               stateSave: true,
               columnDefs: colDefs(this.allCols)
             });
+            this.handleDetailChange();
             // this.squeueTable.clear();
             // this.squeueTable.rows.add(this.squeue.jobs).draw();
             keyboardShortcuts(this.squeueTable, this.allCols);
@@ -186,18 +199,7 @@
             .finally(() => this.updateSqueue());
         },
         watch: {
-          detailedInfo: function() {
-            if (this.detailedInfo) {
-              this.squeueTable.columns().visible(true);
-            } else {
-              this.squeueTable.columns().visible(false);
-              const  visible = [];
-              for (const i in this.basicCols) {
-                visible.push(this.allCols.indexOf(this.basicCols[i]));
-              }
-              this.squeueTable.columns(visible).visible(true);
-            }
-          }
+          detailedInfo: function()  {this.handleDetailChange()}, 
           // squeue : function () {this.updateSqueue()},
           // nodeinfo : function () {}
         }
