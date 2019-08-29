@@ -3,9 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Job info</title>
+    <title>Squeue</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- <link rel="stylesheet" type="text/css" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css" />  -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/themes/vue-tabs.css"
@@ -15,29 +14,45 @@
       type="text/css"
       href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.7.5/css/bulma.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/css/dataTables.bulma.min.css"
+    />
+
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-router/dist/vue-router.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/dist/vue-tabs.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@0.16.2/dist/axios.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-axios@2.1.4/dist/vue-axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment-duration-format@2.3.2/lib/moment-duration-format.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/js/dataTables.bulma.min.js"></script>
     <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mousetrap@1.6.3/mousetrap.min.js"></script>
+    <script src="./utils.js"></script>
   </head>
   <body>
-    <p>
-      <strong>
-        <a href="./squeue.html">SQUEUE</a>
-        <a href="./nodeinfo.html">NODEINFO</a>
-      </strong>
-    </p>
+    <nav class="navbar is-transparent">
+      <div class="navbar-brand">
+        <p class="navbar-item">
+          <strong class="is-size-3">SLURM web interface</strong>
+        </p>
+        <a class="navbar-item" href="./squeue.html">SQUEUE</a>
+        <a class="navbar-item" href="./nodeinfo.html">NODEINFO</a>
+      </div>
+    </nav>
     <div id="app">
-      <table>
+      <table class="table">
         <tr valign="top">
           <td v-for="l in jobinfoitems">
-            <table>
+            <table class="table is-narrow">
               <tr v-for="j in l" v-if="job[j]">
                 <td style="text-align:right">{{ j }}</td>
                 <td>=</td>
@@ -53,9 +68,11 @@
       <p v-if="job.Nodes">Nodelist: {{ job.Nodes }}</p>
       <p v-else-if="job.NodeList">Nodelist: {{ job.NodeList }}</p>
 
+      <hr />
+
       <vue-tabs @tab-change="handleTabChange" type="tabs">
         <v-tab title="Nodeinfo">
-          <table v-if="job.nodeinfo">
+          <table v-if="job.nodeinfo" class="table">
             <thead>
               <td v-for="h in nodeinfoitems">
                 {{ h }}
@@ -76,10 +93,23 @@
           </template>
         </v-tab>
 
+        <v-tab title="Job details">
+          <table>
+            <tr v-for="v,k in job" v-if="k !== 'nodeinfo'">
+              <td style="text-align:right">{{ k }}</td>
+              <td>=</td>
+              <td style="text-align:left;">
+                {{ v }}
+              </td>
+            </tr>
+          </table>
+        </v-tab>
+
         <v-tab title="Processes">
           <p v-if="!job.GANGLIA">Process info not available</p>
           <p v-else-if="job.JobState === 'PENDING' || job.State">
-            No processes to show for job in {{ job.JobState || job.State }} state.
+            No processes to show for job in
+            {{ job.JobState || job.State }} state.
           </p>
           <p v-else-if="!job.procs">
             Fetching ganglia job graphs...
@@ -142,6 +172,21 @@
           </div>
         </v-tab>
       </vue-tabs>
+      <footer class="footer">
+        <div class="containar">
+          <div class="content has-text-centered">
+            Credits: Developed by
+            <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a> using
+            <a href="https://bottlepy.org">Bottle</a> for the server side and
+            <a href="https://vuejs.org">Vue</a>,
+            <a href="https://datatables.net/">Datatables</a>
+            and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
+            client side.<br />
+            Source and docs:
+            <a href="https://github.com/dragz/slurmbrowser/">On GitHub.</a>
+          </div>
+        </div>
+      </footer>
     </div>
     <script>
       var router = new VueRouter({
