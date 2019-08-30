@@ -50,6 +50,16 @@
     </nav>
 
     <div id="app">
+      <p 
+        v-if="globalinfo"
+        class="box is-size-4 has-background-light"
+        id="totals"
+      >
+        Nodes states:
+        <template v-for="v,k in globalinfo">
+          {{k}}:{{v}}&emsp;
+        </template>
+      </p>
       <p>
         The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally, it
         should be close to 1.0 on all nodes.
@@ -84,7 +94,8 @@
         data: {
           nodeinfo: null,
           squeue: null,
-          nodeinfoTable: null
+          nodeinfoTable: null,
+          globalinfo: null
         },
         methods: {
           fetchSqueue() {
@@ -141,6 +152,7 @@
               }
             }
 
+            const nodestates = {};
             for (const n in this.nodeinfo) {
               const hostinfo = this.nodeinfo[n];
               const cpualloc = hostinfo["CPUAlloc"];
@@ -157,7 +169,12 @@
               } else {
                 hostinfo["JOBS"] = "";
               }
+              if (! nodestates.hasOwnProperty(hostinfo["State"]) ) {
+                nodestates[hostinfo["State"]] = 0;
+              }
+              nodestates[hostinfo["State"]]++;
             }
+            this.globalinfo = nodestates;
           },
           render_joblist(data, type, row) {
             const jobdisp = [];
