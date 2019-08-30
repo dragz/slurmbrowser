@@ -49,14 +49,22 @@
       </div>
     </nav>
 
-    <p>
-      The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally, it
-      should be close to 1.0 on all nodes.
-    </p>
-    <table id="nodeinfo" class="table display" cellspacing="0" width="100%"></table>
-
+    <div id="app">
+      <p>
+        The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally, it
+        should be close to 1.0 on all nodes.
+      </p>
+      <table
+        id="nodeinfo"
+        class="table"
+        cellspacing="0"
+        width="100%"
+        v-if="squeue"
+      ></table>
+      <div class="container" v-else=""><img src="default.gif" /></div>
+    </div>
     <footer class="footer">
-      <div class="containar">
+      <div class="container">
         <div class="content has-text-centered">
           Credits: Developed by
           <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a> using
@@ -70,125 +78,120 @@
         </div>
       </div>
     </footer>
-
     <script>
-      // cutnpaste from stackexchange
-      function getDataAsync(url, callback) {
-        $.ajax({
-          async: true,
-          url: url,
-          dataType: "json",
-          success: callback
-        });
-      }
-      var nodeinfoData;
-      var queueinfoData;
-
-      function renderTable() {
-        var visibleCols = [
-          "NodeName",
-          "CPUTot",
-          "CPUAlloc",
-          "CPULoad",
-          "RealMemory",
-          "AllocMem",
-          "FreeMem",
-          "State"
-        ];
-
-        var nodes = nodeinfoData["nodeinfo"];
-
-        var headers = queueinfoData["headers"];
-        var jobs = queueinfoData["jobs"];
-        var nodelist_idx = headers.indexOf("NODELIST(REASON)");
-        var jobid_idx = headers.indexOf("JOBID");
-        var user_idx = headers.indexOf("USER");
-        var hostjobs = {};
-        for (var j in jobs) {
-          var job = jobs[j];
-          var hostlist = expand_nodelist(job[nodelist_idx]);
-          for (var h in hostlist) {
-            var hostname = hostlist[h];
-            if (!(hostname in hostjobs)) {
-              hostjobs[hostname] = [];
-            }
-            hostjobs[hostname].push({
-              jobid: job[jobid_idx],
-              user: job[user_idx]
+      const nodeinfoVue = new Vue({
+        el: "#app",
+        data: {
+          nodeinfo: null,
+          squeue: null,
+          nodeinfoTable: null
+        },
+        methods: {
+          fetchSqueue() {
+            return this.axios.get("../data/squeue");
+          },
+          fetchNodeinfo() {
+            return this.axios.get("../data/nodeinfo");
+          },
+          updateNodeinfo() {
+            this.calculateExtraInfo();
+            this.nodeinfoTable = $("#nodeinfo").DataTable({
+              data: this.nodeinfo,
+              columns: [
+                { data: "NodeName", title: "NodeName" },
+                { data: "CPUTot", title: "CPUTot" },
+                { data: "CPUAlloc", title: "CPUAlloc" },
+                { data: "CPULoad", title: "CPULoad" },
+                {
+                  data: "LoadPerAlloc",
+                  title: "LoadPerAlloc",
+                  type: "any-number"
+                },
+                { data: "RealMemory", title: "RealMemory" },
+                { data: "AllocMem", title: "AllocMem" },
+                { data: "FreeMem", title: "FreeMem" },
+                { data: "State", title: "State" },
+                { data: "JOBS", title: "JOBS", render: this.render_joblist }
+              ],
+              order: [[1, "asc"]],
+              pageLength: 50,
+              lengthMenu: [[50, 100, -1], [50, 100, "All"]],
+              stateSave: true
             });
+          },
+          calculateExtraInfo() {
+            const headers = this.squeue.headers;
+            const jobs = this.squeue.jobs;
+            const nodelist_idx = headers.indexOf("NODELIST(REASON)");
+            const jobid_idx = headers.indexOf("JOBID");
+            const user_idx = headers.indexOf("USER");
+            const hostjobs = {};
+            for (const j in jobs) {
+              const job = jobs[j];
+              const hostlist = expand_nodelist(job[nodelist_idx]);
+              for (const h in hostlist) {
+                const hostname = hostlist[h];
+                if (!(hostname in hostjobs)) {
+                  hostjobs[hostname] = [];
+                }
+                hostjobs[hostname].push({
+                  jobid: job[jobid_idx],
+                  user: job[user_idx]
+                });
+              }
+            }
+
+            for (const n in this.nodeinfo) {
+              const hostinfo = this.nodeinfo[n];
+              const cpualloc = hostinfo["CPUAlloc"];
+              const cpuload = hostinfo["CPULoad"];
+              let loadperalloc = "";
+              if (cpualloc >= 1) {
+                loadperalloc = (cpuload / cpualloc).toFixed(2);
+              } else {
+                loadperalloc = "N/A";
+              }
+              hostinfo["LoadPerAlloc"] = loadperalloc;
+              if (hostinfo["NodeName"] in hostjobs) {
+                hostinfo["JOBS"] = hostjobs[hostinfo["NodeName"]];
+              } else {
+                hostinfo["JOBS"] = "";
+              }
+            }
+          },
+          render_joblist(data, type, row) {
+            const jobdisp = [];
+            for (const d in data) {
+              const j = data[d];
+              jobdisp.push(
+                "<a href=job.html?jobid=" +
+                  j["jobid"] +
+                  ">" +
+                  j["jobid"] +
+                  "</a>:" +
+                  "<a href=jobhist.html?user=" +
+                  j["user"] +
+                  ">" +
+                  j["user"] +
+                  "</a>"
+              );
+            }
+            return jobdisp.join(",");
           }
-        }
-
-        for (var n in nodes) {
-          var hostinfo = nodes[n];
-          var cpualloc = hostinfo["CPUAlloc"];
-          var cpuload = hostinfo["CPULoad"];
-          var loadperalloc;
-          if (cpualloc >= 1) {
-            loadperalloc = (cpuload / cpualloc).toFixed(2);
-          } else {
-            loadperalloc = "N/A";
-          }
-          hostinfo["LoadPerAlloc"] = loadperalloc;
-          if (hostinfo["NodeName"] in hostjobs) {
-            hostinfo["JOBS"] = hostjobs[hostinfo["NodeName"]];
-          } else {
-            hostinfo["JOBS"] = "";
-          }
-        }
-
-        var render_joblist = function(data, type, row) {
-          var jobdisp = [];
-          for (var d in data) {
-            var j = data[d];
-            jobdisp.push(
-              "<a href=job.html?jobid=" +
-                j["jobid"] +
-                ">" +
-                j["jobid"] +
-                "</a>:" +
-                "<a href=jobhist.html?user=" +
-                j["user"] +
-                ">" +
-                j["user"] +
-                "</a>"
-            );
-          }
-          return jobdisp.join(",");
-        };
-        $("#nodeinfo").DataTable({
-          data: nodes,
-          columns: [
-            { data: "NodeName", title: "NodeName" },
-            { data: "CPUTot", title: "CPUTot" },
-            { data: "CPUAlloc", title: "CPUAlloc" },
-            { data: "CPULoad", title: "CPULoad", type: "any-number" },
-            { data: "LoadPerAlloc", title: "LoadPerAlloc", type: "any-number" },
-            { data: "RealMemory", title: "RealMemory" },
-            { data: "AllocMem", title: "AllocMem" },
-            { data: "FreeMem", title: "FreeMem", type: "any-number" },
-            { data: "State", title: "State" },
-            { data: "JOBS", title: "JOBS", render: render_joblist }
-          ],
-          order: [[1, "asc"]],
-          pageLength: 50,
-          lengthMenu: [[50, 100, -1], [50, 100, "All"]],
-          stateSave: true
-        });
-      }
-
-      //Pull all node and job info from the server as json and render the htmltable
-
-      var get_nodeinfo = $.getJSON("../data/nodeinfo", function(data) {
-        nodeinfoData = data;
-      });
-
-      var get_queueinfo = $.getJSON("../data/squeue", function(data) {
-        queueinfoData = data;
-      });
-
-      get_nodeinfo.done(function() {
-        get_queueinfo.done(renderTable);
+        },
+        mounted() {
+          this.axios
+            .all([this.fetchSqueue(), this.fetchNodeinfo()])
+            .then(
+              this.axios.spread(
+                (s, n) => (
+                  (this.squeue = s.data), (this.nodeinfo = n.data.nodeinfo)
+                )
+              )
+            )
+            .finally(() => this.updateNodeinfo());
+        },
+        watch: {}
       });
     </script>
   </body>
