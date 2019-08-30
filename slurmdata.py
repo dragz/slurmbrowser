@@ -122,6 +122,8 @@ def server_static(filename):
 
 def convert(a):
     b = a.strip()
+    if b.find("_") != -1:
+        return b
     if b.isdigit():
         return int(b)
     try:
