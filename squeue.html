@@ -55,10 +55,13 @@
         id="totals"
         v-if="globalStats"
       >
-        Running jobs: {{ globalStats.running_jobs }} Idle jobs:
-        {{ globalStats.idle_jobs }} Allocated CPUS:
-        {{ globalStats.alloc_cpus }} Total CPUs:
-        {{ globalStats.total_cpus }} Backlog:
+        Running/idle jobs: {{ globalStats.running_jobs }} / 
+        {{globalStats.idle_jobs }} 
+        &emsp;
+        Utilization: {{ (globalStats.alloc_cpus/globalStats.total_cpus*100).toFixed(2) }}%
+        ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }})
+        &emsp;
+        Backlog:
         {{ globalStats.backlog.toFixed(2) }} hours
         <br />
         Nodestates:
