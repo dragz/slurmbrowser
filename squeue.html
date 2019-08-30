@@ -50,7 +50,22 @@
     </nav>
 
     <div id="app">
-      <p id="totals"></p>
+      <p
+        class="box is-size-4 has-background-light"
+        id="totals"
+        v-if="globalStats"
+      >
+        Running jobs: {{ globalStats.running_jobs }} Idle jobs:
+        {{ globalStats.idle_jobs }} Allocated CPUS:
+        {{ globalStats.alloc_cpus }} Total CPUs:
+        {{ globalStats.total_cpus }} Backlog:
+        {{ globalStats.backlog.toFixed(2) }} hours
+        <br />
+        Nodestates:
+        <template v-for="v,k in globalStats.nodestates">
+          {{ k }} = {{ v }}
+        </template>
+      </p>
       <a class="button is-primary" @click="filter_jobs('\\bR\\b')">
         Show running jobs(r)
       </a>
@@ -115,6 +130,7 @@
           squeue: null,
           nodeinfo: null,
           squeueTable: null,
+          globalStats: null,
           allCols: [
             "JOBID",
             "USER",
@@ -123,7 +139,7 @@
             "PARTITION",
             "QOS",
             "NODES",
-            // "AvgNodeLoad",
+            "AvgNodeLoad",
             "CPUS",
             "MIN_MEMORY",
             "TIME_LEFT",
@@ -136,7 +152,7 @@
             "JOBID",
             "USER",
             "ST",
-            // "AvgNodeLoad",
+            "AvgNodeLoad",
             "CPUS",
             "TIME_LEFT",
             "START_TIME"
@@ -149,12 +165,16 @@
           fetchNodeinfo() {
             return this.axios.get("../data/nodeinfo");
           },
-          handleDetailChange () {
+          handleDetailChange() {
+            localStorage.detailedInfo = this.detailedInfo;
+            if (!this.squeue) {
+              return
+            }
             if (this.detailedInfo) {
               this.squeueTable.columns().visible(true);
             } else {
               this.squeueTable.columns().visible(false);
-              const  visible = [];
+              const visible = [];
               for (const i in this.basicCols) {
                 visible.push(this.allCols.indexOf(this.basicCols[i]));
               }
@@ -162,6 +182,7 @@
             }
           },
           updateSqueue() {
+            compute_avg_nodeload(this);
             this.squeueTable = $("#squeueref").DataTable({
               data: this.squeue.jobs,
               columns: colProps(this.allCols, this.squeue.headers),
@@ -187,6 +208,11 @@
           }
         },
         mounted() {
+          if (localStorage.hasOwnProperty("detailedInfo")) {
+            this.detailedInfo = localStorage.detailedInfo === 'true';
+          } else {
+            localStorage.detailedInfo = this.detailedInfo;
+          }
           this.axios
             .all([this.fetchSqueue(), this.fetchNodeinfo()])
             .then(
@@ -199,7 +225,9 @@
             .finally(() => this.updateSqueue());
         },
         watch: {
-          detailedInfo: function()  {this.handleDetailChange()}, 
+          detailedInfo: function() {
+            this.handleDetailChange();
+          }
           // squeue : function () {this.updateSqueue()},
           // nodeinfo : function () {}
         }
@@ -216,6 +244,7 @@
             className: "dt-body-right"
           });
         }
+        cols[viscols.indexOf("NODELIST(REASON)")].className = "dt-body-left";
         return cols;
       }
 
@@ -237,17 +266,17 @@
             type: "mem-size",
             targets: allCols.indexOf("MIN_MEMORY")
           },
-          // {
-          //   render: function(data, type, row) {
-          //     var c = "black";
-          //     if (data < 15.0) {
-          //       c = "red";
-          //     }
-          //     return "<span style=color:" + c + ">" + data + "</span>";
-          //   },
-          //   type: "any-number",
-          //   targets: this.allCols.indexOf("AvgNodeLoad")
-          // },
+          {
+            render: function(data, type, row) {
+              var c = "black";
+              if (data < 15.0) {
+                c = "red";
+              }
+              return "<span style=color:" + c + ">" + data + "</span>";
+            },
+            type: "any-number",
+            targets: allCols.indexOf("AvgNodeLoad")
+          },
           {
             type: "timespec",
             targets: [
@@ -303,6 +332,69 @@
             .search(".", true)
             .draw()
         );
+      }
+
+      function compute_avg_nodeload(s) {
+        const headers = s.squeue.headers;
+        const jobs = s.squeue.jobs;
+        const nodelist = s.nodeinfo;
+
+        headers.push("AvgNodeLoad");
+
+        const nodelist_idx = headers.indexOf("NODELIST(REASON)");
+        const state_idx = headers.indexOf("ST");
+
+        const nodes = {};
+        const nodestates = {};
+        let total_cpus = 0;
+        let alloc_cpus = 0;
+        let backlog = 0.0;
+        for (const n in nodelist) {
+          node = nodelist[n];
+          nodes[node["NodeName"]] = node;
+          if (!nodestates[node["State"]]) {
+            nodestates[node["State"]] = 0;
+          }
+          nodestates[node["State"]]++;
+          total_cpus += node["CPUTot"];
+          alloc_cpus += node["CPUAlloc"];
+        }
+
+        let running_jobs = 0;
+        let idle_jobs = 0;
+        for (const j in jobs) {
+          const job = jobs[j];
+          if (job[headers.indexOf("USER")] === "rahmada") {
+            console.log(headers.indexOf("JOBID"), job[headers.indexOf("JOBID")]);
+          }
+          if (job[state_idx] === "R") {
+            running_jobs++;
+            let avgnodeload = 0.0;
+            const jobnodes = expand_nodelist(job[nodelist_idx]);
+            for (const n in jobnodes) {
+              const nodename = jobnodes[n];
+              if (nodes[nodename]) {
+                avgnodeload = avgnodeload + nodes[nodename]["CPULoad"];
+              }
+            }
+            avgnodeload = avgnodeload / jobnodes.length;
+            jobs[j].push(avgnodeload.toFixed(2));
+          } else {
+            idle_jobs++;
+            jobs[j].push("N/A");
+            backlog +=
+              timespec_to_seconds(job[headers.indexOf("TIME_LIMIT")]) *
+              job[headers.indexOf("CPUS")];
+          }
+        }
+        s.globalStats = {
+          total_cpus: total_cpus,
+          alloc_cpus: alloc_cpus,
+          nodestates: nodestates,
+          running_jobs: running_jobs,
+          idle_jobs: idle_jobs,
+          backlog: backlog / total_cpus / 3600.0
+        };
       }
     </script>
   </body>
