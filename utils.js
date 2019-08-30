@@ -21,7 +21,7 @@ function parsenodes1(nodespec) {
       .toString()
       .slice(1, -1)
       .split(",");
-    var nodenumbers = _.flatten(explist.map(create_numbers));
+    var nodenumbers = _.flattenDeep(explist.map(create_numbers));
     var compose_fullname = function(n) {
       return base + n;
     };
