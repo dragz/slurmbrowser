@@ -37,7 +37,7 @@ function expand_nodelist(nodelist) {
   var sep = /,(?=[a-z])/gi;
   var nl = nodelist.split(sep);
   var exp_nl = nl.map(parsenodes1);
-  return _.flatten(exp_nl);
+  return _.flattenDeep(exp_nl);
 }
 
 //var nodelist = "c1-[0-5],c2-[1,2,5-6,7-20],c3-1,c3-2,c4-[1,2,4,6]";
