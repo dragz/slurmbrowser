@@ -50,19 +50,21 @@
     </nav>
 
     <div id="app">
-      <p 
+      <p
         v-if="globalinfo"
         class="box is-size-4 has-background-light"
         id="totals"
       >
         Nodes states:
         <template v-for="v,k in globalinfo">
-          {{k}}:{{v}}&emsp;
+          {{ k }}:{{ v }}&emsp;
         </template>
       </p>
       <p>
         The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally, it
         should be close to 1.0 on all nodes.
+        <input type="checkbox" v-model="outliersOnly" />
+        Show only outliers (LoadPerAlloc &lt; 0.75 or LoadperAlloc &gt; 1.25)
       </p>
       <table
         id="nodeinfo"
@@ -89,13 +91,17 @@
       </div>
     </footer>
     <script>
+      var MIN_LOAD, MAX_LOAD;
       const nodeinfoVue = new Vue({
         el: "#app",
         data: {
           nodeinfo: null,
           squeue: null,
           nodeinfoTable: null,
-          globalinfo: null
+          globalinfo: null,
+          outliersOnly: false,
+          max_load: 1.75,
+          min_load: 0.25
         },
         methods: {
           fetchSqueue() {
@@ -169,7 +175,7 @@
               } else {
                 hostinfo["JOBS"] = "";
               }
-              if (! nodestates.hasOwnProperty(hostinfo["State"]) ) {
+              if (!nodestates.hasOwnProperty(hostinfo["State"])) {
                 nodestates[hostinfo["State"]] = 0;
               }
               nodestates[hostinfo["State"]]++;
@@ -207,8 +213,37 @@
               )
             )
             .finally(() => this.updateNodeinfo());
+          window.MAX_LOAD = this.max_load;
+          window.MIN_LOAD = this.min_load;
         },
-        watch: {}
+        watch: {
+          outliersOnly() {
+            if (this.outliersOnly) {
+              this.min_load = 0.75;
+              this.max_load = 1.25;
+            } else {
+              this.min_load = -1;
+              this.max_load = 10000.0;
+            }
+            window.MAX_LOAD = this.max_load;
+            window.MIN_LOAD = this.min_load;
+            this.nodeinfoTable.draw();
+          }
+        }
+      });
+
+      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        if (window.MIN_LOAD < 0.0) {
+          return true;
+        }
+        if (
+          parseFloat(data[4]) < window.MIN_LOAD ||
+          parseFloat(data[4]) > window.MAX_LOAD
+        ) {
+          return true;
+        } else {
+          return false;
+        }
       });
     </script>
   </body>
