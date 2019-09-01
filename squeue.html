@@ -56,7 +56,10 @@
         v-if="globalStats"
       >
         Running/idle jobs: {{ globalStats.running_jobs }} / 
-        {{globalStats.idle_jobs }} 
+        {{ globalStats.idle_jobs }} 
+        &emsp;
+        Active users/accounts:
+        {{ globalStats.active_users }}/{{ globalStats.active_accounts}}
         &emsp;
         Utilization: {{ (globalStats.alloc_cpus/globalStats.total_cpus*100).toFixed(2) }}%
         ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }})
@@ -360,11 +363,12 @@
 
         let running_jobs = 0;
         let idle_jobs = 0;
+        const active_users = new Set();
+        const active_accounts = new Set();
         for (const j in jobs) {
           const job = jobs[j];
-          if (job[headers.indexOf("USER")] === "rahmada") {
-            console.log(headers.indexOf("JOBID"), job[headers.indexOf("JOBID")]);
-          }
+          active_users.add(job[headers.indexOf("USER")]);
+          active_accounts.add(job[headers.indexOf("ACCOUNT")]);
           if (job[state_idx] === "R") {
             running_jobs++;
             let avgnodeload = 0.0;
@@ -391,7 +395,9 @@
           nodestates: nodestates,
           running_jobs: running_jobs,
           idle_jobs: idle_jobs,
-          backlog: backlog / total_cpus / 3600.0
+          backlog: backlog / total_cpus / 3600.0,
+          active_users: active_users.size,
+          active_accounts: active_accounts.size
         };
       }
     </script>
