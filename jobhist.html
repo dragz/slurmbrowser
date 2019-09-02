@@ -1,146 +1,109 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
-  <script src="https://code.jquery.com/jquery-1.12.3.js">
-  </script>
-  <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js">
-  </script>
- <script src="https://cdn.jsdelivr.net/npm/mousetrap@1.6.3/mousetrap.min.js">
- </script>
-<head>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
-<title>
-</title>
-</head>
-<body>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Job history</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/themes/vue-tabs.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.7.5/css/bulma.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/css/dataTables.bulma.min.css"
+    />
 
-<p id="debug"></p>
-<p> <a href="squeue.html"> squeue </a> </p>
-<p>Keyboard shortcuts: f-first page, n-next, p-previous, l-last,
-  s-search, r-running jobs, c-completed jobs, w-waiting jobs, a-all jobs.</p>
-<table id="jobhist" class="display nowrap" cellspacing="0"
-       width="100%">
-  <tbody>
-   <trow>
-     <td>
-     <img src="default.gif">
-     </td>
-   </trow>
-  </tbody>
-</table>
-<p>
-Credits:<br>
-Developed by <a href="mailto:roy.dragseth@uit.no">Roy Dragseth</a>
-using <a href="https://bottlepy.org">Bottle</a> for the server side and
-<a href="https://datatables.net/">Datatables</a>
-and <a href="https://craig.is/killing/mice/">Mousetrap</a> for the
-client side.
-</p>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-router/dist/vue-router.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-nav-tabs@0.5.7/dist/vue-tabs.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.16.2/dist/axios.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-axios@2.1.4/dist/vue-axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-duration-format@2.3.2/lib/moment-duration-format.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables-bulma@1.0.1/js/dataTables.bulma.min.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.16/sorting/any-number.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mousetrap@1.6.3/mousetrap.min.js"></script>
+    <script src="./utils.js"></script>
+  </head>
+  <body>
+    <nav class="navbar is-transparent">
+      <div class="navbar-brand">
+        <p class="navbar-item">
+          <strong class="is-size-3">SLURM web interface</strong>
+        </p>
+        <a class="navbar-item" href="./squeue.html">SQUEUE</a>
+        <a class="navbar-item" href="./nodeinfo.html">NODEINFO</a>
+      </div>
+    </nav>
+    <div id="app">
+      <table id="jobhistory" class="table display nowrap"></table>
+    </div>
+    <script>
+      var router = new VueRouter({
+        mode: "history",
+        routes: []
+      });
 
-<script>
-$(document).ready(function() {
-
-// cutnpaste from stackexchange
-function getDataAsync(url, callback) {
-    $.ajax({
-        async: true,
-        url: url,
-        dataType: 'json',
-        success: callback
-    });
-}
-
-
-//cutnpaste from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript 
-var urlParams;
-(window.onpopstate = function () {
-    var match,
-        pl     = /\+/g,  // Regex for replacing addition symbol with aspace
-        search = /([^&=]+)=?([^&]*)/g,
-        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-        query  = window.location.search.substring(1);
-
-    urlParams = {};
-    while (match = search.exec(query))
-       urlParams[decode(match[1])] = decode(match[2]);
-})();
-
-
-function renderTable(jobhistData){
-    var user = urlParams['user'];
-    var visibleCols = jobhistData['headers']
-    var headers = jobhistData['headers'];
-    var jobs = jobhistData['jobs'];
-    var visibleIdx = [];
-    for (c in visibleCols) {
-        visibleIdx.push(headers.indexOf(visibleCols[c]));
-    }
-
-    var cols = [];
-    for (c in visibleCols) {
-        cols[c] = { title: visibleCols[c], data: visibleIdx[c],
-                    className: "dt-body-right" };
-    }
-    cols[cols.length-1].className = "dt-body-left";
-
-    var jobhist = $('#jobhist').DataTable({
-          data : jobs,
-          columns : cols,
-          order : [[ 0, "asc"]],
-          pageLength : 25, 
-          lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
-          scrollX : true,
-          stateSave : true,
-	  columnDefs : [
+      new Vue({
+        router,
+        el: "#app",
+        data: {
+          jobhist : undefined,
+          user : undefined
+        },
+        mounted () {
+          this.user = this.$route.query.user;
+          axios
+            .get("../data/jobhist/"+this.user)
+            .then(response => (this.jobhist = response.data))
+            .finally(() => this.updateJobTable());
+        },
+        methods : {
+          updateJobTable() {
+            const headers = this.jobhist.headers;
+            const jobs = this.jobhist.jobs;
+            const cols = [];
+            for (const i in headers) {
+              if (headers.hasOwnProperty(i)) {
+                const h = headers[i];
+                cols.push({title : h, data : headers.indexOf(h), className : 'dt-body-right'});
+              }
+            }
+            cols[cols.length-1].className = 'dt-body-left';
+            const jobhist = $('#jobhistory').DataTable({
+              data : jobs,
+              columns : cols,
+              order : [[ 0, "asc"]],
+              pageLength : 25,
+              lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
+              scrollX : true,
+              stateSave : true,
+      	      columnDefs : [
                   { render : function(data, type, row) {
-                                 return "<a href=job.html?jobid=" + data + 
+                                 return "<a href=job.html?jobid=" + data +
                                        ">" + data + "</a>";
-                               
                              },
                     targets : 0
                   }
-          ]
-    } );
-//   document.getElementById('debug').innerHTML = ;
-
-   Mousetrap.bind('n', function() {
-      jobhist.page( 'next' ).draw( 'page' );
-    });
-   Mousetrap.bind('p', function() {
-      jobhist.page( 'previous' ).draw( 'page' );
-    });
-   Mousetrap.bind('f', function() {
-      jobhist.page( 'first' ).draw( 'page' );
-    });
-   Mousetrap.bind('l', function() {
-      jobhist.page( 'last' ).draw( 'page' );
-    });
-   Mousetrap.bind('s', function() {
-      $('div.dataTables_filter input').focus();
-    }, 'keyup');
-
-   Mousetrap.bind('r', function() {
-      jobhist.column(4).search('RUNNING').draw();           
-    });
-   Mousetrap.bind('c', function() {
-      jobhist.column(4).search('COMPLETED|TIMEOUT', true).draw();           
-    });
-   Mousetrap.bind('w', function() {
-      jobhist.column(4).search('PENDING').draw();           
-    });
-   Mousetrap.bind('a', function() {
-      jobhist.column(4).search('.', true).draw();           
-    });
-
-}
-
-//Pull all queue info from the server as json and render the htmltable
-getDataAsync("../data/jobhist/"+urlParams['user'], renderTable);
-
-});
-</script>
-
-<script>
-</script>
-
-</body>
+              ]
+          });
+          }
+        },
+        watch : {}
+      });
+    </script>
+  </body>
 </html>
