@@ -56,15 +56,17 @@
         id="totals"
       >
         Nodes states:
-        <template v-for="v,k in globalinfo">
+        ALLOCATED:{{ globalinfo["ALLOCATED"] }} &emsp;
+        IDLE:{{ globalinfo["IDLE"] }} &emsp;
+        <template v-for="v,k in globalinfo" v-if="k !== 'ALLOCATED' && k !=='IDLE'">
           {{ k }}:{{ v }}&emsp;
         </template>
       </p>
       <p>
         The <strong>LoadPerAlloc</strong> shows CPULoad/CPUAlloc. Ideally, it
         should be close to 1.0 on all nodes.
-        <input type="checkbox" v-model="outliersOnly" />
-        Show only outliers (LoadPerAlloc &lt; 0.75 or LoadperAlloc &gt; 1.25)
+        (<input type="checkbox" v-model="outliersOnly" />
+        Show only outliers where LoadPerAlloc &lt; 0.75 or LoadperAlloc &gt; 1.25)
       </p>
       <table
         id="nodeinfo"
