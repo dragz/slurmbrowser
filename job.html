@@ -168,7 +168,7 @@
               </tr>
             </table>
 
-            <p v-else="">Ganglia process info here</p>
+            <p v-else="">Ganglia load graphs here</p>
           </div>
         </v-tab>
       </vue-tabs>
@@ -274,7 +274,7 @@
           handleTabChange(tabIndex, newTab, oldTab) {
             if (tabIndex == 1) {
               // Processes
-            } else if (tabIndex == 2) {
+            } else if (tabIndex == 3) {
               // Load graphs
               this.showloadgraphs = true;
             } else {
