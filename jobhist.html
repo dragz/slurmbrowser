@@ -61,17 +61,17 @@
         router,
         el: "#app",
         data: {
-          jobhist : undefined,
-          user : undefined
+          jobhist: undefined,
+          user: undefined
         },
-        mounted () {
+        mounted() {
           this.user = this.$route.query.user;
           axios
-            .get("../data/jobhist/"+this.user)
+            .get("../data/jobhist/" + this.user)
             .then(response => (this.jobhist = response.data))
             .finally(() => this.updateJobTable());
         },
-        methods : {
+        methods: {
           updateJobTable() {
             const headers = this.jobhist.headers;
             const jobs = this.jobhist.jobs;
@@ -79,30 +79,36 @@
             for (const i in headers) {
               if (headers.hasOwnProperty(i)) {
                 const h = headers[i];
-                cols.push({title : h, data : headers.indexOf(h), className : 'dt-body-right'});
+                cols.push({
+                  title: h,
+                  data: headers.indexOf(h),
+                  className: "dt-body-right"
+                });
               }
             }
-            cols[cols.length-1].className = 'dt-body-left';
-            const jobhist = $('#jobhistory').DataTable({
-              data : jobs,
-              columns : cols,
-              order : [[ 0, "asc"]],
-              pageLength : 25,
-              lengthMenu : [ [ 25, 50, 100, -1], [ 25, 50, 100, "All"] ],
-              scrollX : true,
-              stateSave : true,
-      	      columnDefs : [
-                  { render : function(data, type, row) {
-                                 return "<a href=job.html?jobid=" + data +
-                                       ">" + data + "</a>";
-                             },
-                    targets : 0
-                  }
+            cols[cols.length - 1].className = "dt-body-left";
+            const jobhist = $("#jobhistory").DataTable({
+              data: jobs,
+              columns: cols,
+              order: [[0, "asc"]],
+              pageLength: 25,
+              lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
+              scrollX: true,
+              stateSave: true,
+              columnDefs: [
+                {
+                  render: function(data, type, row) {
+                    return (
+                      "<a href=job.html?jobid=" + data + ">" + data + "</a>"
+                    );
+                  },
+                  targets: 0
+                }
               ]
-          });
+            });
           }
         },
-        watch : {}
+        watch: {}
       });
     </script>
   </body>
