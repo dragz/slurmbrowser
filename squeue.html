@@ -65,17 +65,17 @@
         }}% ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }}) &emsp;
         Backlog: {{ globalStats.backlog.toFixed(2) }} hours
       </p>
-      <a class="button is-primary" @click="filter_jobs('\\bR\\b')">
+      <a class="button is-info" @click="filter_jobs('\\bR\\b')">
         Show running jobs(r)
       </a>
-      <a class="button is-primary" @click="filter_jobs('[^R]')">
+      <a class="button is-info" @click="filter_jobs('[^R]')">
         Show non running jobs(w)
       </a>
-      <a class="button is-primary" @click="filter_jobs('.')">
+      <a class="button is-info" @click="filter_jobs('.')">
         Show all jobs(a)
       </a>
-      <a class="button is-primary" @click="detailedInfo=!detailedInfo">
-        Show job details(d)
+      <a class="button is-info" @click="detailedInfo=!detailedInfo">
+        Show job details
       </a>
       <hr />
       <table
