@@ -55,17 +55,15 @@
         id="totals"
         v-if="globalStats"
       >
-        Running/idle jobs: {{ globalStats.running_jobs }} / 
-        {{ globalStats.idle_jobs }} 
-        &emsp;
-        Active users/accounts:
-        {{ globalStats.active_users }}/{{ globalStats.active_accounts}}
-        &emsp;
-        Utilization: {{ (globalStats.alloc_cpus/globalStats.total_cpus*100).toFixed(2) }}%
-        ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }})
-        &emsp;
-        Backlog:
-        {{ globalStats.backlog.toFixed(2) }} hours
+        Running/idle jobs: {{ globalStats.running_jobs }} /
+        {{ globalStats.idle_jobs }}
+        &emsp; Active users/accounts:
+        {{ globalStats.active_users }}/{{ globalStats.active_accounts }} &emsp;
+        Utilization:
+        {{
+          ((globalStats.alloc_cpus / globalStats.total_cpus) * 100).toFixed(2)
+        }}% ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }}) &emsp;
+        Backlog: {{ globalStats.backlog.toFixed(2) }} hours
       </p>
       <a class="button is-primary" @click="filter_jobs('\\bR\\b')">
         Show running jobs(r)
@@ -104,7 +102,19 @@
         Sort by: c-CPUS, o-NODES, t-TIME_LEFT, i-START_TIME, m-MIN_MEMORY<br />
 
         Click on jobid to display loadgraphs for job. Click on username to see
-        the users job history since yesterday midnight.
+        the users job history since yesterday midnight.<br />
+
+        <strong>Hints:</strong><br />
+        <ul>
+          <li>
+            To see only your own jobs, type your username in the search field.
+          </li>
+          <li>
+            To find out when your job will start select non-running jobs (key w)
+            and then sort by START_TIME (key i). If the job is listed with a
+            start time it is scheduled to run.
+          </li>
+        </ul>
       </div>
 
       <footer class="footer">
@@ -169,7 +179,7 @@
           handleDetailChange() {
             localStorage.detailedInfo = this.detailedInfo;
             if (!this.squeue) {
-              return
+              return;
             }
             if (this.detailedInfo) {
               this.squeueTable.columns().visible(true);
@@ -210,7 +220,7 @@
         },
         mounted() {
           if (localStorage.hasOwnProperty("detailedInfo")) {
-            this.detailedInfo = localStorage.detailedInfo === 'true';
+            this.detailedInfo = localStorage.detailedInfo === "true";
           } else {
             localStorage.detailedInfo = this.detailedInfo;
           }
