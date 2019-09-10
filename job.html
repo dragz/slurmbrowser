@@ -152,22 +152,26 @@
             No load graphs to show yet (pending job)
           </p>
           <div v-else="">
-            <table v-if="showloadgraphs">
-              <thead>
-                <tr>
-                  <td v-for="h in loadgraphs">
-                    {{ h }}
-                  </td>
+            <div  v-if="showloadgraphs">
+              Remark: due to hyperthreading the load and cpu graphs shows
+              misleading stats. Full load is 32 in load_report and full cpu
+              utilization in cpu_report is 50% (we're working on it...)  
+              <table>
+                <thead>
+                  <tr>
+                    <td v-for="h in loadgraphs">
+                      {{ h }}
+                    </td>
+                  </tr>
+                </thead>
+                <tr v-for="node in job.expanded_nodelist">
+                  <td
+                    v-for="graphname in loadgraphs"
+                    v-html="graph( graphname, node, job.Start || job.StartTime, job.End || job.EndTime )"
+                  ></td>
                 </tr>
-              </thead>
-              <tr v-for="node in job.expanded_nodelist">
-                <td
-                  v-for="graphname in loadgraphs"
-                  v-html="graph( graphname, node, job.Start || job.StartTime, job.End || job.EndTime )"
-                ></td>
-              </tr>
-            </table>
-
+              </table>
+            </div>
             <p v-else="">Ganglia load graphs here</p>
           </div>
         </v-tab>
