@@ -55,15 +55,16 @@
         id="totals"
         v-if="globalStats"
       >
-        Running/idle jobs: {{ globalStats.running_jobs }} /
-        {{ globalStats.idle_jobs }}
+        Running/pending jobs: {{ globalStats.running_jobs }}/{{
+          globalStats.idle_jobs
+        }}
         &emsp; Active users/accounts:
         {{ globalStats.active_users }}/{{ globalStats.active_accounts }} &emsp;
         Utilization:
         {{
           ((globalStats.alloc_cpus / globalStats.total_cpus) * 100).toFixed(2)
-        }}% ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }}) &emsp;
-        Backlog: {{ globalStats.backlog.toFixed(2) }} hours
+        }}% ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }} cpus)
+        &emsp; Backlog: {{ globalStats.backlog.toFixed(2) }} hours
       </p>
       <a class="button is-info" @click="filter_jobs('\\bR\\b')">
         Show running jobs(r)
