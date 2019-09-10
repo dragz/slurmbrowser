@@ -50,6 +50,10 @@ var timespec_to_seconds = function(data) {
     minutes = 0,
     seconds = 0;
   var s;
+  // quick fix for interpreting bug i squeue data
+  if (! data || typeof(data) === "number") {
+    return 0;
+  }
   if (data.includes("-")) {
     days = data.split("-")[0];
     s = data.split("-")[1];
