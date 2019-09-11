@@ -69,6 +69,10 @@ $.fn.dataTable.ext.type.order["timespec-pre"] = function(d) {
   return timespec_to_seconds(d);
 };
 
+$.fn.dataTable.ext.type.order["numnodes-pre"] = function(d) {
+  return parseInt(d);
+};
+
 // copypasted from file-size sort plugin.
 $.fn.dataTable.ext.type.order["mem-size-pre"] = function(data) {
   if (typeof(data) === 'number') {

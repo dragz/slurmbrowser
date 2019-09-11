@@ -44,7 +44,7 @@
         <p class="navbar-item">
           <strong class="is-size-3">SLURM web interface</strong>
         </p>
-        <a class="navbar-item" href="./squeue.html">SQUEUE</a>
+        <a class="navbar-item" href="./squeue.html"><strong>SQUEUE</strong></a>
         <a class="navbar-item" href="./nodeinfo.html">NODEINFO</a>
       </div>
     </nav>
@@ -66,10 +66,10 @@
         }}% ({{ globalStats.alloc_cpus }}/{{ globalStats.total_cpus }} cpus)
         &emsp; Backlog: {{ globalStats.backlog.toFixed(2) }} hours
       </p>
-      <a class="button is-info" @click="filter_jobs('\\bR\\b')">
+      <a class="button is-info" @click="filter_jobs('\\bRunning\\b')">
         Show running jobs(r)
       </a>
-      <a class="button is-info" @click="filter_jobs('[^R]')">
+      <a class="button is-info" @click="filter_jobs('^(?:(?!Running).)*$')">
         Show non running jobs(w)
       </a>
       <a class="button is-info" @click="filter_jobs('.')">
@@ -144,30 +144,35 @@
           squeueTable: null,
           globalStats: null,
           allCols: [
-            "JOBID",
-            "USER",
-            "ACCOUNT",
-            "ST",
-            "PARTITION",
+            "JobId",
+            "UserId",
+            "Account",
+            "JobState",
+            "Partition",
             "QOS",
-            "NODES",
+            "NumNodes",
             "AvgNodeLoad",
-            "CPUS",
-            "MIN_MEMORY",
-            "TIME_LEFT",
-            "TIME_LIMIT",
-            "START_TIME",
-            "END_TIME",
-            "NODELIST(REASON)"
+            "NumCPUs",
+            // "MinMemoryNode",
+            "TimeLeft",
+            "RunTime",
+            "TimeLimit",
+            "StartTime",
+            "EndTime",
+            "Reason",
+            "NodeList"
           ],
           basicCols: [
-            "JOBID",
-            "USER",
-            "ST",
+            "JobId",
+            "UserId",
+            "JobState",
+            "NumNodes",
             "AvgNodeLoad",
-            "CPUS",
-            "TIME_LEFT",
-            "START_TIME"
+            "NumCPUs",
+            "TimeLeft",
+            "RunTime",
+            "TimeLimit",
+            "StartTime"
           ]
         },
         methods: {
@@ -194,10 +199,10 @@
             }
           },
           updateSqueue() {
-            compute_avg_nodeload(this);
+            compute_extra_info(this);
             this.squeueTable = $("#squeueref").DataTable({
-              data: this.squeue.jobs,
-              columns: colProps(this.allCols, this.squeue.headers),
+              data: this.squeue.jobinfo,
+              columns: colProps(this),
               // ordering : true,
               // order: [[this.allCols.indexOf["END_TIME"], "asc"]],
               pageLength: 25,
@@ -214,7 +219,7 @@
           updateNodeinfo() {},
           filter_jobs(state) {
             this.squeueTable
-              .column(this.allCols.indexOf("ST"))
+              .column(this.allCols.indexOf("JobState"))
               .search(state, true)
               .draw();
           }
@@ -245,18 +250,16 @@
         }
       });
 
-      function colProps(viscols, headers) {
+      function colProps(sq) {
         const cols = [];
-        for (const i in viscols) {
-          const colhead = viscols[i];
-          const dataIndex = headers.indexOf(colhead);
+        for (const i in sq.allCols) {
           cols.push({
-            title: colhead,
-            data: dataIndex,
+            title: sq.allCols[i],
+            data: sq.allCols[i],
             className: "dt-body-right"
           });
         }
-        cols[viscols.indexOf("NODELIST(REASON)")].className = "dt-body-left";
+        cols[cols.length - 1].className = "dt-body-left";
         return cols;
       }
 
@@ -266,17 +269,22 @@
             render: function(data, type, row) {
               return "<a href=job.html?jobid=" + data + ">" + data + "</a>";
             },
-            targets: allCols.indexOf("JOBID")
+            targets: allCols.indexOf("JobId")
           },
           {
             render: function(data, type, row) {
-              return "<a href=jobhist.html?user=" + data + ">" + data + "</a>";
+              const user = data.replace(/\(.*\)/, "");
+              return "<a href=jobhist.html?user=" + user + ">" + user + "</a>";
             },
-            targets: allCols.indexOf("USER")
+            targets: allCols.indexOf("UserId")
           },
           {
             type: "mem-size",
-            targets: allCols.indexOf("MIN_MEMORY")
+            targets: "MinNodeMem"
+          },
+          {
+            type: "numnodes",
+            targets: allCols.indexOf("NumNodes")
           },
           {
             render: function(data, type, row) {
@@ -287,13 +295,14 @@
               return "<span style=color:" + c + ">" + data + "</span>";
             },
             type: "any-number",
-            targets: allCols.indexOf("AvgNodeLoad")
+            targets: [allCols.indexOf("AvgNodeLoad")]
           },
           {
             type: "timespec",
             targets: [
-              allCols.indexOf("TIME_LEFT"),
-              allCols.indexOf("TIME_LIMIT")
+              allCols.indexOf("TimeLeft"),
+              allCols.indexOf("TimeLimit"),
+              allCols.indexOf("RunTime")
             ]
           }
         ];
@@ -311,50 +320,44 @@
         );
 
         Mousetrap.bind("c", () =>
-          table.order([[headers.indexOf("CPUS"), "desc"]]).draw()
+          table.order([[headers.indexOf("NumCPUs"), "desc"]]).draw()
         );
         Mousetrap.bind("t", () =>
-          table.order([[headers.indexOf("TIME_LEFT"), "asc"]]).draw()
+          table.order([[headers.indexOf("TimeLeft"), "asc"]]).draw()
         );
-        Mousetrap.bind("m", () =>
-          table.order([[headers.indexOf("MIN_MEMORY"), "desc"]]).draw()
-        );
+        // Mousetrap.bind("m", () =>
+        //   table.order([[headers.indexOf("MIN_MEMORY"), "desc"]]).draw()
+        // );
         Mousetrap.bind("o", () =>
-          table.order([[headers.indexOf("NODES"), "desc"]]).draw()
+          table.order([[headers.indexOf("NumNodes"), "desc"]]).draw()
         );
         Mousetrap.bind("i", () =>
-          table.order([[headers.indexOf("START_TIME"), "asc"]]).draw()
+          table.order([[headers.indexOf("StartTime"), "asc"]]).draw()
         );
 
         Mousetrap.bind("r", () =>
           table
-            .column(headers.indexOf("ST"))
-            .search("R")
+            .column(headers.indexOf("JobState"))
+            .search("Running")
             .draw()
         );
         Mousetrap.bind("w", () =>
           table
-            .column(headers.indexOf("ST"))
-            .search("[^R]", true)
+            .column(headers.indexOf("JobState"))
+            .search("^(?:(?!Running).)*$", true)
             .draw()
         );
         Mousetrap.bind("a", () =>
           table
-            .column(headers.indexOf("ST"))
+            .column(headers.indexOf("JobState"))
             .search(".", true)
             .draw()
         );
       }
 
-      function compute_avg_nodeload(s) {
-        const headers = s.squeue.headers;
-        const jobs = s.squeue.jobs;
+      function compute_extra_info(s) {
+        const jobs = s.squeue.jobinfo;
         const nodelist = s.nodeinfo;
-
-        headers.push("AvgNodeLoad");
-
-        const nodelist_idx = headers.indexOf("NODELIST(REASON)");
-        const state_idx = headers.indexOf("ST");
 
         const nodes = {};
         const nodestates = {};
@@ -378,12 +381,12 @@
         const active_accounts = new Set();
         for (const j in jobs) {
           const job = jobs[j];
-          active_users.add(job[headers.indexOf("USER")]);
-          active_accounts.add(job[headers.indexOf("ACCOUNT")]);
-          if (job[state_idx] === "R") {
+          active_users.add(job["UserId"]);
+          active_accounts.add(job["Account"]);
+          if (job["JobState"] === "RUNNING") {
             running_jobs++;
             let avgnodeload = 0.0;
-            const jobnodes = expand_nodelist(job[nodelist_idx]);
+            const jobnodes = expand_nodelist(job["NodeList"]);
             for (const n in jobnodes) {
               const nodename = jobnodes[n];
               if (nodes[nodename]) {
@@ -391,13 +394,19 @@
               }
             }
             avgnodeload = avgnodeload / jobnodes.length;
-            jobs[j].push(avgnodeload.toFixed(2));
+            jobs[j]["AvgNodeLoad"] = avgnodeload.toFixed(2);
+            const runtime = moment.duration(job["RunTime"].replace("-", "."));
+            const timelimit = moment.duration(
+              job["TimeLimit"].replace("-", ".")
+            );
+            const timeleft = timelimit.clone();
+            timeleft.subtract(runtime);
+            jobs[j]["TimeLeft"] = timeleft.format("DD-hh:mm:ss");
           } else {
             idle_jobs++;
-            jobs[j].push("N/A");
-            backlog +=
-              timespec_to_seconds(job[headers.indexOf("TIME_LIMIT")]) *
-              job[headers.indexOf("CPUS")];
+            jobs[j]["AvgNodeLoad"] = "N/A";
+            backlog += timespec_to_seconds(job["TimeLimit"]) * job["NumCPUs"];
+            jobs[j]["TimeLeft"] = jobs[j]["TimeLimit"];
           }
         }
         s.globalStats = {

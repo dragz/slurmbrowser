@@ -44,8 +44,8 @@
         <p class="navbar-item">
           <strong class="is-size-3">SLURM web interface</strong>
         </p>
-        <a class="navbar-item" href="./squeue.html">SQUEUE</a>
-        <a class="navbar-item" href="./nodeinfo.html">NODEINFO</a>
+        <a class="navbar-item " href="./squeue.html">SQUEUE</a>
+        <a class="navbar-item is-active" href="./nodeinfo.html"><strong>NODEINFO</strong></a>
       </div>
     </nav>
 
@@ -146,23 +146,19 @@
             });
           },
           calculateExtraInfo() {
-            const headers = this.squeue.headers;
-            const jobs = this.squeue.jobs;
-            const nodelist_idx = headers.indexOf("NODELIST(REASON)");
-            const jobid_idx = headers.indexOf("JOBID");
-            const user_idx = headers.indexOf("USER");
+            const jobs = this.squeue.jobinfo;
             const hostjobs = {};
             for (const j in jobs) {
               const job = jobs[j];
-              const hostlist = expand_nodelist(job[nodelist_idx]);
+              const hostlist = expand_nodelist(job["NodeList"]);
               for (const h in hostlist) {
                 const hostname = hostlist[h];
                 if (!(hostname in hostjobs)) {
                   hostjobs[hostname] = [];
                 }
                 hostjobs[hostname].push({
-                  jobid: job[jobid_idx],
-                  user: job[user_idx]
+                  jobid: job["JobId"],
+                  user: job["UserId"]
                 });
               }
             }
@@ -202,9 +198,9 @@
                   j["jobid"] +
                   "</a>:" +
                   "<a href=jobhist.html?user=" +
-                  j["user"] +
+                  j["user"].replace(/\(.*\)/, "") +
                   ">" +
-                  j["user"] +
+                  j["user"].replace(/\(.*\)/, "") +
                   "</a>"
               );
             }

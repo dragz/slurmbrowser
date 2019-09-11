@@ -144,19 +144,17 @@ def run_slurmcommand(cmd):
 
 def get_squeue_data():
     t0 = time.time()
-    squeue = run_slurmcommand("squeue -o %all")
-    squeue = hide_usernames(squeue)
-    queuedata = io.StringIO(squeue)
-    print("fetching quedata took ", time.time() - t0)
-    reader = csv.reader(queuedata, delimiter=str('|'))
-    headers = list(map(convert, next(reader)))
-    hl_idx = headers.index("NODELIST(REASON)")
+    squeue = run_slurmcommand("scontrol show job -d --oneliner")
+    # squeue = hide_usernames(squeue)
+    parseline = re.compile(r'([^\s]+?)=(.*?)(?:(?= +[^\s]+?=)|$)')
+    conv = lambda t: (t[0],convert(t[1]))
     rows = list()
-    for row in reader:
-        rows.append(list(map(convert, row)))
+    for l in squeue.splitlines():
+        jobinfo = dict(map(conv, parseline.findall(l)))
+        rows.append(jobinfo)
     print("total squeue", time.time() - t0)
 
-    return {'headers': headers, 'jobs': rows}
+    return {'jobinfo' : rows }
 
 
 @route('/data/squeue')
@@ -198,7 +196,7 @@ def returnnodeinfo(nodelist=""):
     nodeinfo = list()
     # regex101.com to the rescue
     # matches word=anything not containing word=
-    parsenodeinfo = re.compile(r'(\w+)=(.*?)(?:(?= +\w+?=)|$)')
+    parsenodeinfo = re.compile(r'([^\s]+?)=(.*?)(?:(?= +[^\s]+?=)|$)')
     def conv(t): return (t[0], convert(t[1]))
     for l in s:
         nodedata = dict(map(conv, parsenodeinfo.findall(l)))
@@ -211,7 +209,6 @@ def get_procs(nodelist):
     import socket
     host = "jump.cluster"
     port = 8652
-    print(nodelist)
     #nodelist = map(lambda x: x+'.local', nodelist)
     psinfo = Metrics()
     for node in nodelist:
@@ -225,7 +222,6 @@ def get_procs(nodelist):
             fileobject = s.makefile('b', encoding='utf-8')
         node_psinfo = Metrics(infile=fileobject, filter=Filter("ps-").startswith,
                               host_filter=host_filter)
-        print(node_psinfo)
         psinfo.update(node_psinfo)
     return list(psinfo.items())
 
@@ -325,7 +321,7 @@ def fetchgraph():
                     "|".join([h + "\\b" for h in request.query.hl.split(',')]))
             hostgraphurl += "&mreg[]=^" + request.query.mreg
             hostgraphurl += "&title=" + request.query.mreg
-        print(hostgraphurl)
+        # print(hostgraphurl)
         graph = urlopen(hostgraphurl)
         response.set_header('Content-type', 'image/png')
     except Exception as e:
