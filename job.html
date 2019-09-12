@@ -153,21 +153,18 @@
           </p>
           <div v-else="">
             <div  v-if="showloadgraphs">
-              Remark: due to hyperthreading the load and cpu graphs shows
-              misleading stats. Full load is 32 in load_report and full cpu
-              utilization in cpu_report is 50% (we're working on it...)  
               <table>
                 <thead>
                   <tr>
                     <td v-for="h in loadgraphs">
-                      {{ h }}
+                      {{ h[0] }}
                     </td>
                   </tr>
                 </thead>
                 <tr v-for="node in job.expanded_nodelist">
                   <td
                     v-for="graphname in loadgraphs"
-                    v-html="graph( graphname, node, job.Start || job.StartTime, job.End || job.EndTime )"
+                    v-html="graph( graphname[1], node, job.Start || job.StartTime, job.End || job.EndTime )"
                   ></td>
                 </tr>
               </table>
@@ -248,14 +245,14 @@
             "Reason"
           ],
           loadgraphs: [
-            "load_report",
-            "cpu_report",
-            "mem_report",
-            "infiniband_report",
-            "infinibandpkt_report",
-            "lustre_report",
-            "packet_report",
-            "network_report"
+            ["CPU Load", "phys_load_report"],
+            ["CPU Utilization", "phys_cpu_report"],
+            ["Memory Usage", "mem_report"],
+            ["Infiniband bandwidth", "infiniband_report"],
+            ["Infiniband packets", "infinibandpkt_report"],
+            ["Lustre I/O bandwidth", "lustre_report"],
+            ["Ethernet bandwidth", "network_report"],
+            ["Ethernet packets", "packet_report"]
           ],
           showloadgraphs: false,
           processDataTable: null,
@@ -279,7 +276,6 @@
             if (tabIndex == 1) {
               // Processes
             } else if (tabIndex == 3) {
-              // Load graphs
               this.showloadgraphs = true;
             } else {
             }
