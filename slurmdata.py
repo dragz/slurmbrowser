@@ -135,7 +135,7 @@ def convert(a):
 def run_slurmcommand(cmd):
     p = os.popen(cmd, 'r')
     if sys.version_info[0] == 2:
-        output = unicode(p.read())
+        output = unicode(p.read(), errors='ignore')
     else:
         output = p.read()
     p.close()
