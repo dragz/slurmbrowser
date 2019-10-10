@@ -284,7 +284,8 @@
           },
           {
             type: "numnodes",
-            targets: allCols.indexOf("NumNodes")
+            targets: allCols.indexOf("NumNodes"),
+            render : (data, type, row) => parseInt(data)
           },
           {
             render: function(data, type, row) {
