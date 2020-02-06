@@ -65,8 +65,8 @@
         </tr>
       </table>
 
-      <p v-if="job.Nodes">Nodelist: {{ job.Nodes }}</p>
-      <p v-else-if="job.NodeList">Nodelist: {{ job.NodeList }}</p>
+      <p v-if="job.NodeList">Nodelist: {{ job.NodeList }}</p>
+      <p v-else-if="job.Nodes">Nodelist: {{ job.Nodes }}</p>
 
       <hr />
 
@@ -153,9 +153,9 @@
           </p>
           <div v-else="">
             <div  v-if="showloadgraphs">
-              Remark: due to hyperthreading the load and cpu graphs shows
+              <!-- Remark: due to hyperthreading the load and cpu graphs shows
               misleading stats. Full load is 32 in load_report and full cpu
-              utilization in cpu_report is 50% (we're working on it...)  
+              utilization in cpu_report is 50% (we're working on it...)   -->
               <table>
                 <thead>
                   <tr>
@@ -248,12 +248,12 @@
             "Reason"
           ],
           loadgraphs: [
-            "load_report",
-            "cpu_report",
+            "phys_load_report",
+            "phys_cpu_report",
             "mem_report",
             "infiniband_report",
             "infinibandpkt_report",
-            "lustre_report",
+            // "lustre_report",
             "packet_report",
             "network_report"
           ],

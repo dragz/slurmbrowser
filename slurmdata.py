@@ -8,6 +8,7 @@ from __future__ import absolute_import, division
 
 import sys
 import os
+import socket
 # quick fix for locating install dir when running under apache
 if not __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
@@ -46,6 +47,9 @@ GANGLIA = int(config.get('MAIN', 'ganglia'))
 GANGLIA_PROC = int(config.get('MAIN', 'ganglia_proc'))
 
 if GANGLIA:
+    ganglia_server = config.get('Ganglia', 'ganglia_server')
+    ganglia_cluster_name = config.get('Ganglia', 'ganglia_cluster_name')
+    ganglia_api_port = config.get('Ganglia', 'ganglia_api_port')
     serverurl = config.get('Ganglia', 'serverurl')
     graphurl = config.get('Ganglia', 'graphurl')
     user = config.get('Ganglia', 'user')
@@ -206,16 +210,17 @@ def returnnodeinfo(nodelist=""):
 
 
 def get_procs(nodelist):
-    import socket
-    host = "jump.cluster"
-    port = 8652
+    global ganglia_server, ganglia_api_port, ganglia_cluster_name
+    host = ganglia_server
+    port = ganglia_api_port
+    cluster = ganglia_cluster_name
     #nodelist = map(lambda x: x+'.local', nodelist)
     psinfo = Metrics()
     for node in nodelist:
         host_filter = Filter(hl=[node]).hostlist
         s = socket.create_connection((host, port))
         # beware, if the nodename isn't recognized gmetad will dump the whole database on you.
-        s.sendall(("/frontends/%s/\n" % node).encode('utf-8'))
+        s.sendall(("/%s/%s/\n" % (cluster, node)).encode('utf-8'))
         if sys.version_info[0] == 2:
             fileobject = s.makefile('b')
         else:
@@ -255,7 +260,9 @@ def returnjobinfo(jobid):
             j['cpu_mapping'] = {'headers': h, 'nodes': cpu_mapping}
             j['expanded_nodelist'] = list(
                 map(str.strip, expand_hostlist(nodelist)))
-            if 'Nodes' in j:
+            if 'NodeList' in j:
+                j['nodeinfo'] = returnnodeinfo(j['NodeList'])['nodeinfo']
+            elif 'Nodes' in j:
                 j['nodeinfo'] = returnnodeinfo(j['Nodes'])['nodeinfo']
             if GANGLIA == 1 and GANGLIA_PROC == 1:
                 t_procs0 = time.time()
