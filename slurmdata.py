@@ -6,6 +6,14 @@ from __future__ import absolute_import, division
 # into production. All backport code is wrapped in if sys.version_info[0] == 2:
 # blocks.
 
+from bottle import route, run, static_file, request, response, default_app
+from pipes import quote
+import datetime as dt
+import time
+import io
+import csv
+import re
+from hostlist import expand_hostlist
 import sys
 import os
 import socket
@@ -13,15 +21,7 @@ import socket
 if not __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
     os.chdir(os.path.dirname(__file__))
-from hostlist import expand_hostlist
 
-import re
-import csv
-import io
-import time
-import datetime as dt
-from pipes import quote
-from bottle import route, run, static_file, request, response, default_app
 if sys.version_info[0] == 2:
     import urllib
     import urllib2
@@ -38,7 +38,6 @@ else:
     from configparser import ConfigParser
 
 
-
 GANGLIA = 0
 GANGLIA_PROC = 0
 config = ConfigParser()
@@ -52,6 +51,7 @@ if GANGLIA:
     ganglia_api_port = config.get('Ganglia', 'ganglia_api_port')
     serverurl = config.get('Ganglia', 'serverurl')
     graphurl = config.get('Ganglia', 'graphurl')
+    ganglia_node_domainname = config.get('Ganglia', 'ganglia_node_domainname')
     user = config.get('Ganglia', 'user')
     passwd = config.get('Ganglia', 'passwd')
 
@@ -124,6 +124,15 @@ def server_static(filename):
     return static_file(filename, root='.')
 
 
+def transform_nodename(nodename):
+    global ganglia_node_domainname
+
+    if ganglia_node_domainname:
+        return "%s.%s" % (nodename, ganglia_node_domainname)
+    else:
+        return nodename
+
+
 def convert(a):
     b = a.strip()
     if b.find("_") != -1:
@@ -151,14 +160,14 @@ def get_squeue_data():
     squeue = run_slurmcommand("scontrol show job -d --oneliner")
     # squeue = hide_usernames(squeue)
     parseline = re.compile(r'([^\s]+?)=(.*?)(?:(?= +[^\s]+?=)|$)')
-    conv = lambda t: (t[0],convert(t[1]))
+    def conv(t): return (t[0], convert(t[1]))
     rows = list()
     for l in squeue.splitlines():
         jobinfo = dict(map(conv, parseline.findall(l)))
         rows.append(jobinfo)
     print("total squeue", time.time() - t0)
 
-    return {'jobinfo' : rows }
+    return {'jobinfo': rows}
 
 
 @route('/data/squeue')
@@ -214,13 +223,15 @@ def get_procs(nodelist):
     host = ganglia_server
     port = ganglia_api_port
     cluster = ganglia_cluster_name
-    #nodelist = map(lambda x: x+'.local', nodelist)
+    # nodelist = map(lambda x: x+'.local', nodelist)
     psinfo = Metrics()
     for node in nodelist:
-        host_filter = Filter(hl=[node]).hostlist
+        host_filter = Filter(hl=[transform_nodename(node)]).hostlist
         s = socket.create_connection((host, port))
         # beware, if the nodename isn't recognized gmetad will dump the whole database on you.
-        s.sendall(("/%s/%s/\n" % (cluster, node)).encode('utf-8'))
+        query = "/%s/%s/\n" % (cluster, transform_nodename(node))
+        print(query)
+        s.sendall(query.encode('utf-8'))
         if sys.version_info[0] == 2:
             fileobject = s.makefile('b')
         else:
@@ -309,7 +320,7 @@ def returnjobhist(user):
 #
 # Proxy requests for graphs to ganglia backend so we do not have to expose it
 # It should in principle be possible to support any graphing backend that accept
-# hostname, graphname, start, end in urls to produce an image with a graph. 
+# hostname, graphname, start, end in urls to produce an image with a graph.
 @route('/graph/')
 def fetchgraph():
     global graphurl
@@ -320,12 +331,12 @@ def fetchgraph():
                         )
         if request.query.hostname:
             hostgraphurl = hostgraphurl.replace(
-                'HOSTNAME', request.query.hostname)
+                'HOSTNAME', transform_nodename(request.query.hostname))
         if request.query.hl:
             hostgraphurl += "&glegend=hide&gtype=line&z=large&line_width=0"
             hostgraphurl += "&aggregate=1&hreg[]=" + \
                 urllib.parse.quote(
-                    "|".join([h + "\\b" for h in request.query.hl.split(',')]))
+                    "|".join([transform_nodename(h) + "\\b" for h in request.query.hl.split(',')]))
             hostgraphurl += "&mreg[]=^" + request.query.mreg
             hostgraphurl += "&title=" + request.query.mreg
         # print(hostgraphurl)

@@ -6,19 +6,18 @@ ganglia_proc = 1
 
 
 [Ganglia]
-ganglia_server = jump.cluster
-ganglia_cluster_name = frontends
+# Ganglia web frontend server address
+ganglia_server = robinhood.saga
+ganglia_cluster_name = saga
 ganglia_api_port = 8652
 
 # set internal domain name of cluster if compute nodes report
 # themselves with nodename.domainname and slurm does not. For
 # example: nodenames in slurm are cX-Y and in ganglia cX-Y.cluster
 # then set ganglia_node_domainname = cluster
-ganglia_node_domainname = cluster
+ganglia_node_domainname = 
 
-# Ganglia web frontend server address
 serverurl = http://%(ganglia_server)s
-
 # graphurl needs to match to the direct links to the graph images in the gmetad
 # web frontend.
 # GRAPH_NAME, HOSTNAME, START and END strings are replaced in
