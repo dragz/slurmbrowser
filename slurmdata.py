@@ -13,7 +13,6 @@ import time
 import io
 import csv
 import re
-from hostlist import expand_hostlist
 import sys
 import os
 import socket
@@ -21,6 +20,7 @@ import socket
 if not __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
     os.chdir(os.path.dirname(__file__))
+from hostlist import expand_hostlist
 
 if sys.version_info[0] == 2:
     import urllib
