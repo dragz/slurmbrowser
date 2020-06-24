@@ -23,7 +23,7 @@ serverurl = http://%(ganglia_server)s
 # web frontend.
 # GRAPH_NAME, HOSTNAME, START and END strings are replaced in
 # slurmdata.py:fetchgraph() 
-graphurl = %(serverurl)s/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=%(ganglia_cluster_name)s&s=descending&hc=4&mc=2&h=HOSTNAME.cluster&r=custom&cs=STARTTIME&ce=ENDTIME
+graphurl = %(serverurl)s/ganglia/graph.php?g=GRAPH_NAME&z=medium&c=%(ganglia_cluster_name)s&s=descending&hc=4&mc=2&h=HOSTNAME&r=custom&cs=STARTTIME&ce=ENDTIME
 # in case the ganglia web frontend is password protected.
 user = admin
 passwd = ganglia
