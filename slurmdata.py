@@ -89,8 +89,8 @@ def obfuscated_usernames():
     uu = set(map(str.strip, usernames))
     a = ord('a')
     z = ord('z')
-    ou = [chr(s)+chr(t)+"user" for s in range(ord('a'), ord('z')+1)
-          for t in range(ord('a'), ord('z')+1)]
+    ou = [chr(s) + chr(t) + "user" for s in range(ord('a'), ord('z') + 1)
+          for t in range(ord('a'), ord('z') + 1)]
     usermap = list(zip(uu, ou))
     return usermap
 
@@ -264,8 +264,8 @@ def returnjobinfo(jobid):
             for i, n in enumerate(s):
                 if n.startswith("Nodes="):
                     cpu_mapping.append([s[i].replace('Nodes=', ''),
-                                        s[i+1].replace('CPU_IDs=', ''),
-                                        s[i+2].replace('Mem=', '')])
+                                        s[i + 1].replace('CPU_IDs=', ''),
+                                        s[i + 2].replace('Mem=', '')])
                 if n.startswith("NodeList="):
                     nodelist = n.replace("NodeList=", "")
             j['cpu_mapping'] = {'headers': h, 'nodes': cpu_mapping}
@@ -326,8 +326,8 @@ def fetchgraph():
     global graphurl
     try:
         hostgraphurl = (graphurl.replace('GRAPH_NAME', request.query.name)
-                        .replace('STARTTIME',  request.query.start)
-                        .replace('ENDTIME',    request.query.end)
+                        .replace('STARTTIME', request.query.start)
+                        .replace('ENDTIME', request.query.end)
                         )
         if request.query.hostname:
             hostgraphurl = hostgraphurl.replace(
